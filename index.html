@@ -825,7 +825,7 @@ body[data-mod=asistente] #lbMicFlot{display:none}
 const $=id=>document.getElementById(id);
 const SPP='00001101-0000-1000-8000-00805f9b34fb';
 const enc=new TextEncoder(),dec=new TextDecoder();
-let tx=null,cerrar=null,tipo='',puerto=null,disp=null,resto='',ultimoRx=0,conectadoEn=0,rxCuenta=0;
+let tx=null,cerrar=null,tipo='',puerto=null,disp=null,moduloOk=false,resto='',ultimoRx=0,conectadoEn=0,rxCuenta=0;
 let cfg={mec:0,nombres:['Delantera izq.','Delantera der.','Trasera izq.','Trasera der.']},modulo=null,cond='J',k=0.6,paro=false;
 let real={rec:0,asta:0,elev:0,disp:0,incl:0,m:[0,0,0,0]};
 const keys={},held={},L={x:0,y:0},R={x:0,y:0};
@@ -887,7 +887,7 @@ function recibir(txt){
 function linea(l){
   const p=l.split(',');
   if(p[0]!=='E'||p.length<7)return;
-  ultimoRx=Date.now();rxCuenta++;
+  ultimoRx=Date.now();rxCuenta++;moduloOk=true;
   if(+p[6]!==cfg.mec){cfg.mec=+p[6];armar()}
   tele({m:p.slice(1,5).map(n=>+n/100),paro:p[5]==='1'});
   if(p.length>=9)sensor(+p[7],p[8]==='1');
@@ -965,6 +965,7 @@ async function pedirPuerto(){
 async function conectarClasico(){
   $('pop').classList.add('oculto');estado('Elige el módulo en la lista...');
   try{
+    if(puerto&&!moduloOk)puerto=null;          // el último no era el robot (p. ej. el ESP32): vuelve a mostrar la lista
     if(!puerto)puerto=await pedirPuerto();
     estado('Conectando...');
     await puerto.open({baudRate:9600});
@@ -990,6 +991,7 @@ async function conectarClasico(){
 async function conectarBle(){
   $('pop').classList.add('oculto');estado('Elige el módulo en la lista...');
   try{
+    if(disp&&!moduloOk)disp=null;
     if(!disp){
       disp=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[0xFFE0]});
       disp.addEventListener('gattserverdisconnected',()=>{if(tipo==='ble'&&tx)desconectar(true)});
@@ -1093,7 +1095,7 @@ const PALETA=(()=>{
 
 // ---------- estado de la conexión ----------
 function listo(t){
-  tipo=t;setTimeout(()=>enviar('W,'+$('vol').value,true),300);enviar('V,'+Math.round(k*100),true);resto='';ultimoRx=0;conectadoEn=Date.now();
+  tipo=t;moduloOk=false;setTimeout(()=>enviar('W,'+$('vol').value,true),300);enviar('V,'+Math.round(k*100),true);resto='';ultimoRx=0;conectadoEn=Date.now();
   $('cConectar').classList.add('oculto');$('bDesc').classList.remove('oculto');
   pill(true);estado('Conectado. Esperando al robot...');
 }
@@ -1124,7 +1126,7 @@ setInterval(()=>{
   if(!tx)return;
   const ahora=Date.now();
   if(ultimoRx&&ahora-ultimoRx<1000)estado('Conectado. El robot responde.');
-  else if(ahora-conectadoEn>2000)estado('El robot no responde: revisa el cable pin 18 (TX1) → RXD con el divisor y que el Mega tenga el programa.',true);
+  else if(ahora-conectadoEn>2000)estado(moduloOk?'El robot dejó de responder: acércate o revisa la batería.':'No llegan datos del robot. ¿Elegiste su módulo (HC-05) y no la paleta u otro? Toca Desconectar y vuelve a Conectar: te mostraré la lista. Si es el correcto, revisa el cable pin 18 (TX1) → RXD y que el Mega tenga el programa.',true);
 },500);
 // Pestaña Pruebas: estado de la conexión
 setInterval(()=>{
