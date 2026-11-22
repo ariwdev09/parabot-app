@@ -958,7 +958,11 @@ async function enviar(txt,importante){
 }
 
 // ---------- Bluetooth clásico (HC-05 / HC-06) con Web Serial ----------
+// Si la lista con filtro sale vacía (Android a veces no tiene guardado que el HC-05 es «serie»), el siguiente toque
+// busca SIN filtro: muestra todos los módulos vinculados. Se alterna en cada intento fallido.
+let sinFiltro=false;
 async function pedirPuerto(){
+  if(sinFiltro)return await navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP]});
   try{return await navigator.serial.requestPort({filters:[{bluetoothServiceClassId:SPP}]})}
   catch(e){if(e.name!=='TypeError')throw e;return await navigator.serial.requestPort()}
 }
@@ -969,7 +973,12 @@ async function conectarClasico(){
     if(!puerto)puerto=await pedirPuerto();
     estado('Conectando...');
     await puerto.open({baudRate:9600});
-  }catch(e){puerto=null;return fallo(e)}
+  }catch(e){
+    puerto=null;
+    if(e&&e.name==='NotFoundError'){sinFiltro=!sinFiltro;
+      return estado(sinFiltro?'No apareció el robot. Toca Conectar → HC-05 otra vez: ahora busco sin filtro (todos los vinculados).'
+                             :'Tampoco apareció sin filtro. Revisa que el HC-05 esté vinculado en Ajustes → Bluetooth (clave 1234).',true)}
+    return fallo(e)}
   const p=puerto,writer=p.writable.getWriter(),reader=p.readable.getReader();
   tx=s=>writer.write(enc.encode(s));
   const lectura=(async()=>{
