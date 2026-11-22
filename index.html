@@ -961,13 +961,19 @@ async function enviar(txt,importante){
 // Si la lista con filtro sale vacía (Android a veces no tiene guardado que el HC-05 es «serie»), el siguiente toque
 // busca SIN filtro: muestra todos los módulos vinculados. Se alterna en cada intento fallido.
 let sinFiltro=false;
+// En la laptop (Windows/Mac/Linux) el módulo es un puerto COM que crea el sistema («Serie estándar sobre el vínculo
+// Bluetooth (COMx)»): Chrome no siempre lo marca como Bluetooth, así que el filtro deja la lista vacía. Ahí, sin filtro.
+const ES_ANDROID=/Android/i.test(navigator.userAgent);
 async function pedirPuerto(){
+  if(!ES_ANDROID)return await navigator.serial.requestPort();
   if(sinFiltro)return await navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP]});
   try{return await navigator.serial.requestPort({filters:[{bluetoothServiceClassId:SPP}]})}
   catch(e){if(e.name!=='TypeError')throw e;return await navigator.serial.requestPort()}
 }
 async function conectarClasico(){
-  $('pop').classList.add('oculto');estado('Elige el módulo en la lista...');
+  $('pop').classList.add('oculto');
+  estado(ES_ANDROID?'Elige el módulo en la lista...'
+    :'Elige el puerto del robot: «Serie estándar sobre el vínculo Bluetooth (COM…)». En la laptop de Ariel es el COM20 (HC-06).');
   try{
     if(puerto&&!moduloOk)puerto=null;          // el último no era el robot (p. ej. el ESP32): vuelve a mostrar la lista
     if(!puerto)puerto=await pedirPuerto();
