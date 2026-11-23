@@ -964,8 +964,34 @@ let sinFiltro=false;
 // En la laptop (Windows/Mac/Linux) el módulo es un puerto COM que crea el sistema («Serie estándar sobre el vínculo
 // Bluetooth (COMx)»): Chrome no siempre lo marca como Bluetooth, así que el filtro deja la lista vacía. Ahí, sin filtro.
 const ES_ANDROID=/Android/i.test(navigator.userAgent);
+let saltarGuardado=false;
+const CHROME_V=+((navigator.userAgent.match(/Chrome\/(\d+)/)||[])[1]||0);
+async function puertoGuardado(){            // Android: el HC-06 que ya autorizaste antes, sin abrir la lista
+  try{const ps=await navigator.serial.getPorts();
+    const bt=ps.filter(x=>{try{return (x.getInfo().bluetoothServiceClassId||'').toString().toLowerCase().includes('1101')}catch(_){return false}});
+    return bt.length===1?bt[0]:(ps.length===1?ps[0]:null)}catch(_){return null}
+}
+function ayudaAndroid(){                    // los pasos, en grande, cuando el robot no aparece en la tablet
+  let d=$('ayudaBT');
+  if(!d){d=document.createElement('div');d.id='ayudaBT';
+    d.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;padding:16px';
+    document.body.appendChild(d)}
+  const v=CHROME_V?('Tu Chrome es la versión '+CHROME_V+(CHROME_V<137?' — <b>actualízalo en Play Store</b> (necesita 137 o más).':' (está bien).')):'';
+  d.innerHTML='<div style="max-width:620px;background:#111;color:#eee;border:2px solid #f5b400;border-radius:14px;padding:18px 20px;font:16px/1.45 system-ui">'
+   +'<h3 style="margin:0 0 8px;color:#f5b400">El robot no aparece en la tablet</h3>'
+   +'<p style="margin:0 0 8px">Chrome solo muestra los módulos que ya están <b>vinculados</b> en la tablet. Haz esto en orden:</p><ol style="margin:0 0 10px;padding-left:22px">'
+   +'<li><b>Cierra la app en la laptop</b> (el HC-06 acepta un solo aparato). La luz del robot debe parpadear rápido.</li>'
+   +'<li>Ajustes de la tablet → <b>Bluetooth</b> → «Vincular dispositivo nuevo» → <b>HC-06</b> → clave <b>1234</b> (o 0000). Si ya estaba, tócalo → <b>Desvincular</b> y vuelve a vincularlo.</li>'
+   +'<li>Ajustes → Aplicaciones → <b>Chrome</b> → Permisos → <b>Dispositivos cercanos: Permitir</b> (y Ubicación: Permitir, con la ubicación encendida).</li>'
+   +'<li>En esta página, toca el candado junto a la dirección → <b>Dispositivos serie: Permitir</b>.</li>'
+   +'<li>Cierra Chrome desde las apps recientes, ábrelo otra vez y toca <b>Conectar → HC-05</b>: elige <b>HC-06</b>.</li></ol>'
+   +'<p style="margin:0 0 12px;color:#bbb">'+v+'</p>'
+   +'<button id="ayudaOk" style="font:inherit;font-weight:700;padding:8px 18px;border-radius:10px;border:0;background:#f5b400;color:#111">Entendido</button></div>';
+  d.style.display='flex';$('ayudaOk').onclick=()=>{d.style.display='none'};
+}
 async function pedirPuerto(){
   if(!ES_ANDROID)return await navigator.serial.requestPort();
+  if(!saltarGuardado){const g=await puertoGuardado();if(g){saltarGuardado=true;return g}}   // si falla, la próxima vez muestra la lista
   if(sinFiltro)return await navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP]});
   try{return await navigator.serial.requestPort({filters:[{bluetoothServiceClassId:SPP}]})}
   catch(e){if(e.name!=='TypeError')throw e;return await navigator.serial.requestPort()}
@@ -981,6 +1007,8 @@ async function conectarClasico(){
     await puerto.open({baudRate:9600});
   }catch(e){
     puerto=null;
+    if(e&&e.name==='NotFoundError'&&ES_ANDROID&&!sinFiltro){sinFiltro=true;ayudaAndroid();
+      return estado('El robot no apareció. Sigue los pasos de la pantalla y vuelve a tocar Conectar → HC-05.',true)}
     if(e&&e.name==='NotFoundError'){sinFiltro=!sinFiltro;
       return estado(sinFiltro?'No apareció el robot. Toca Conectar → HC-05 otra vez: ahora busco sin filtro (todos los vinculados).'
                              :'Tampoco apareció sin filtro. Revisa que el HC-05 esté vinculado en Ajustes → Bluetooth (clave 1234).',true)}
@@ -1110,7 +1138,7 @@ const PALETA=(()=>{
 
 // ---------- estado de la conexión ----------
 function listo(t){
-  tipo=t;moduloOk=false;setTimeout(()=>enviar('W,'+$('vol').value,true),300);enviar('V,'+Math.round(k*100),true);resto='';ultimoRx=0;conectadoEn=Date.now();
+  tipo=t;saltarGuardado=false;moduloOk=false;setTimeout(()=>enviar('W,'+$('vol').value,true),300);enviar('V,'+Math.round(k*100),true);resto='';ultimoRx=0;conectadoEn=Date.now();
   $('cConectar').classList.add('oculto');$('bDesc').classList.remove('oculto');
   pill(true);estado('Conectado. Esperando al robot...');
 }
@@ -1560,6 +1588,8 @@ $('bDesc').onclick=()=>desconectar(false);
   if(!('bluetooth' in navigator)){$('bBle').disabled=true;av.push('HM-10: usa Chrome en Android o PC; en iPhone, Bluefy.')}
   if(!$('bClasico').disabled)av.push('HC-05: primero emparéjalo en los ajustes de Bluetooth (clave 1234 o 0000).');
   $('soporte').textContent=av.join(' ');
+  if(ES_ANDROID){const b=document.createElement('button');b.className='ico';b.textContent='¿No aparece el robot?';
+    b.onclick=()=>{$('pop').classList.add('oculto');ayudaAndroid()};$('cConectar').appendChild(b)}
 })();
 
 // ================= ASISTENTE DE VOZ "LIEBRE" =================
