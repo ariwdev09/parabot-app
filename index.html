@@ -679,9 +679,22 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M12 34V12a6 6 0 0 1 12 0v0M28 12v22" /><path d="M24 30l4 5 4-5"/></svg>
     <span><b>1 · Recorrido</b><small id="lbRutinaEst">1 avanza · 2 quieto · 3 ↺90° · 4 quieto · 5 ↻90° · 6 🔊1 · 7 ↺90° · 8 🔊3 · 9 🔊2 · 10 🔊4</small></span>
    </button>
-   <button class="ia-rutina" id="lbRutina2" title="Botón 2 · regreso: gira 90° a la izquierda, avanza de vuelta al inicio y gira 180° para quedar mirando como al empezar">
+   <button class="ia-rutina" id="lbRutina2" title="Botón 2 · regreso: audio 8, gira 90° a la izquierda y avanza de vuelta al inicio">
     <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M28 32V14a6 6 0 0 0-12 0v4"/><path d="M12 14l4 5 4-5"/></svg>
-    <span><b>2 · Regreso al inicio</b><small id="lbRutina2Est">↺90° · regresa · ↺180°</small></span>
+    <span><b>2 · Regreso al inicio</b><small id="lbRutina2Est">🔊8 · ↺90° · regresa</small></span>
+   </button>
+   <div class="rut-sec" style="margin:6px 0 2px">FERIA · toca otra vez para detener</div>
+   <button class="ia-rutina" id="lbFeria1" title="Audio 5 y luego el asta sube y baja (con los tiempos de la rutina) hasta que lo detengas">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34V8"/><path d="M14 14l6-6 6 6"/><path d="M14 28l6 6 6-6"/></svg>
+    <span><b>Módulo Liebre</b><small id="lbFeria1Est">🔊5 · el asta sube y baja</small></span>
+   </button>
+   <button class="ia-rutina" id="lbFeria2" title="Audio 6, sube la inclinación (tiempo de la rutina) y enciende la recolección y el shooter hasta que lo detengas">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="13" cy="27" r="6"/><path d="M19 24l14-12"/><path d="M27 12h6v6"/></svg>
+    <span><b>Lanzador adaptativo</b><small id="lbFeria2Est">🔊6 · inclinación ▲ · recolección y shooter</small></span>
+   </button>
+   <button class="ia-rutina" id="lbFeria3" title="Solo reproduce el audio 7">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 16h6l8-6v20l-8-6H8z"/><path d="M27 14a8 8 0 0 1 0 12"/></svg>
+    <span><b>Audio 7</b><small id="lbFeria3Est">🔊7</small></span>
    </button>
    <details class="rut-aj" id="lbRutAj" open><summary>⚙ AJUSTAR LA RUTINA</summary>
     <div class="rut-ayuda">− / + cambian de a 0,01 s o de a 1 %. <b>Mantenlos presionados</b> para ir rápido, o escribe el número. Cada ▶ prueba solo ese paso con el robot.</div>
@@ -699,9 +712,9 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <div class="rut-paso"><div class="rut-pt"><b>10</b><span>Audio «Uno, dos, tres, ¡vamos!»<small>después se queda ahí</small></span><button type="button" class="rut-play" data-oir="lbRutA4">▶ Escuchar</button></div><div class="rut-fila"><span>N.º de audio<small>archivo de la microSD (1 a 8)</small></span><div class="rut-st"><button type="button" data-rut="lbRutA4" data-d="-1" aria-label="Menos">−</button><input id="lbRutA4" type="number" min="1" max="8" step="1" value="4" aria-label="N.º de audio"><button type="button" data-rut="lbRutA4" data-d="1" aria-label="Más">+</button></div></div><div class="rut-fila"><span>Espera mientras suena (s)<small>ajústalo al largo del audio</small></span><div class="rut-st"><button type="button" data-rut="lbRutP4" data-d="-0.01" aria-label="Menos">−</button><input id="lbRutP4" type="number" min="0" max="60" step="0.01" value="3" aria-label="Espera mientras suena (s) (s)"><button type="button" data-rut="lbRutP4" data-d="0.01" aria-label="Más">+</button></div></div></div>
     <div class="rut-sec">BOTÓN 2 · REGRESO A SU LUGAR</div>
     <div class="rut-total" id="lbRutTotal2">Botón 2 dura ≈ — s</div>
-    <div class="rut-paso"><div class="rut-pt"><b>1</b><span>Gira 90° a la izquierda<small>usa el tiempo del paso 3 del botón 1</small></span><button type="button" class="rut-play" data-clic="lbProbarGiro">▶ Probar</button></div></div>
-    <div class="rut-paso"><div class="rut-pt"><b>2</b><span>Avanza la misma distancia<small>con el tiempo y la potencia del paso 1 del botón 1</small></span><button type="button" class="rut-play" data-clic="lbProbarAv">▶ Probar</button></div></div>
-    <div class="rut-paso"><div class="rut-pt"><b>3</b><span>Gira 180°<small>queda mirando como al empezar</small></span><button type="button" class="rut-play" id="lbProbar180">▶ Probar</button></div><div class="rut-fila"><span>Tiempo para 180° (s)<small></small></span><div class="rut-st"><button type="button" data-rut="lbGiro180" data-d="-0.01" aria-label="Menos">−</button><input id="lbGiro180" type="number" min="0" max="30" step="0.01" value="1" aria-label="Tiempo para 180° (s) (s)"><button type="button" data-rut="lbGiro180" data-d="0.01" aria-label="Más">+</button></div></div></div>
+    <div class="rut-paso"><div class="rut-pt"><b>1</b><span>Audio 8<small>suena al empezar; el robot espera este tiempo</small></span></div><div class="rut-fila"><span>Duración (s)<small>lo que dura el audio 8</small></span><div class="rut-st"><button type="button" data-rut="lbRutP8" data-d="-0.01" aria-label="Menos">−</button><input id="lbRutP8" type="number" min="0" max="60" step="0.01" value="3" aria-label="Duración (s)"><button type="button" data-rut="lbRutP8" data-d="0.01" aria-label="Más">+</button></div></div></div>
+    <div class="rut-paso"><div class="rut-pt"><b>2</b><span>Gira 90° a la izquierda<small>usa el tiempo del paso 3 del botón 1</small></span><button type="button" class="rut-play" data-clic="lbProbarGiro">▶ Probar</button></div></div>
+    <div class="rut-paso"><div class="rut-pt"><b>3</b><span>Avanza la misma distancia<small>con el tiempo y la potencia del paso 1 del botón 1</small></span><button type="button" class="rut-play" data-clic="lbProbarAv">▶ Probar</button></div></div>
     <div class="rut-fila"><span>Asta e inclinación en el botón 2<small>que también suban y bajen mientras regresa</small></span><div class="rut-st"><button type="button" id="lbRutOsc2" class="rut-val" style="cursor:pointer" data-v="0">OFF</button></div></div>
     <div class="rut-sec">ASTA E INCLINACIÓN · suben y bajan todo el botón 1</div>
     <div class="rut-fila"><span>Durante todo el botón 1<small>al terminar quedan abajo</small></span><div class="rut-st"><button type="button" id="lbRutOsc" class="rut-val" style="cursor:pointer" data-v="1">ON</button></div></div>
@@ -2002,7 +2015,7 @@ const CMD=(()=>{
     if(Math.abs(d-0.5)<0.01)return e+(e===1?' segundo':' segundos')+' y medio';
     return (d?String(s).replace('.',' coma '):s)+(s===1?' segundo':' segundos')};   // dicho claro: «medio segundo», «1 segundo y medio»
   // «alto»: detiene SOLO la orden de voz en curso (ruedas, asta, seguir línea). No activa el PARO ni apaga lo demás.
-  function alto(){VOZ.altos=(VOZ.altos||0)+1;const habia=VOZ.corriendo||Date.now()<VOZ.hasta||Date.now()<VOZ.astaHasta||siguiendo;
+  function alto(){feriaParar(false);VOZ.altos=(VOZ.altos||0)+1;const habia=VOZ.corriendo||Date.now()<VOZ.hasta||Date.now()<VOZ.astaHasta||siguiendo;
     VOZ.cancelar=true;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;if(siguiendo)$('bLinea').click();decir(habia?'Me detengo.':'Ya estoy quieto.')}
   // «paro total / de emergencia / para todo»: el botón PARO de siempre (frena todo hasta «reanuda»)
   function paroTotal(){VOZ.altos=(VOZ.altos||0)+1;VOZ.cancelar=true;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;if(!paro)$('paro').click();decir('Paro total. Di «reanuda» para seguir.')}
@@ -2159,7 +2172,7 @@ const CMD=(()=>{
   const segAv=()=>{const v=parseFloat(($('lbRutT')||{}).value);return v>=0&&v<=60?v:2};
   const leer=(id,mn,mx,def)=>{const v=parseFloat(($(id)||{}).value);return v>=mn&&v<=mx?v:def};
   // audios del recorrido: [número, segundos] de cada paso con audio
-  const AUD={A1:['lbRutA1','lbRutP1',1],A2:['lbRutA2','lbRutP2',3],A3:['lbRutA3','lbRutP3',2],A4:['lbRutA4','lbRutP4',4]};
+  const AUD={A1:['lbRutA1','lbRutP1',1],A2:['lbRutA2','lbRutP2',3],A3:['lbRutA3','lbRutP3',2],A4:['lbRutA4','lbRutP4',4],A8:['lbRutA8','lbRutP8',8]};
   const audN=k=>Math.round(leer(AUD[k][0],1,8,AUD[k][2])),audS=k=>leer(AUD[k][1],0,60,3);
   const segGiroD=()=>leer('lbGiroD',0,30,0.5),segGiro180=()=>leer('lbGiro180',0,30,1),segReg=segAv,   // el regreso = la misma distancia
         segQ1=()=>leer('lbRutQ1',0,60,0.5),segQ2=()=>leer('lbRutQ2',0,60,1);
@@ -2170,20 +2183,19 @@ const CMD=(()=>{
   // duración aproximada de cada botón (para ver que la entrada dure lo que quieres, p. ej. 20 s)
   const durB1=()=>0.9+segAv()+segQ1()+segGiroR()+segQ2()+segGiroD()+audS('A1')+segGiroR()+audS('A2')+audS('A3')+audS('A4')
     +(oscOn()?segAstaBaja()/2+segAstaExtra()+0.3:0)+segIncFin();   // al final: el asta baja y la inclinación sube
-  const durB2=()=>0.9+segGiroR()+0.3+segAv()+0.3+segGiro180();
+  const durB2=()=>0.9+audS('A8')+segGiroR()+0.3+segAv();
   const f1=v=>String(Math.round(v*100)/100).replace('.',',');
   function etiqueta(){return f1(segAv())+' s ↑ · '+f1(segQ1())+' s · ↺90° · '+f1(segQ2())+' s · ↻90° · 🔊audio '+audN('A1')+' · ↺90° · 🔊audio '+audN('A2')+' · 🔊audio '+audN('A3')+' · 🔊audio '+audN('A4')+' · quieto'
     +(oscOn()?' · asta ▲'+f1(segAstaSube())+' ▼'+f1(segAstaBaja())+' s, inclinación ▲'+f1(segInclSube())+' ▼'+f1(segInclBaja())+' s todo el tiempo':'')}
-  function etiqueta2(){return '↺90° · '+f1(segReg())+' s ↑ de regreso · ↺180° ('+f1(segGiro180())+' s)'+(osc2On()?' · con asta e inclinación':'')}
+  function etiqueta2(){return '🔊audio 8 · ↺90° · '+f1(segReg())+' s ↑ de regreso'+(osc2On()?' · con asta e inclinación':'')}
   // Pasos: [nombre, x, y, r, duración]. y/r: 'L' avance lento, '-G' giro a la izquierda, 'G' a la derecha.
   // duración: 'T' avance, 'R' regreso, 'g90' / 'g90d' / 'g180' giros, 'Q1' / 'Q2' quieto, 'A1'…'A4' audios.
   // BOTÓN 1 (Ariel, 19 de nov. de 2026): avanza → quieto 0,5 s → 90° izq. → quieto 1 s → 90° der. → audio 1 → 90° izq. → audios 3, 2 y 4 → quieto
   const PASOS=[['avanza',0,'L',0,'T'],['quieto',0,0,0,'Q1'],['gira 90° a la izquierda',0,0,'-G','g90'],['quieto',0,0,0,'Q2'],
                ['gira 90° a la derecha',0,0,'G','g90d'],['audio',0,0,0,'A1'],['gira 90° a la izquierda',0,0,'-G','g90'],
                ['audio',0,0,0,'A2'],['audio',0,0,0,'A3'],['audio',0,0,0,'A4']];
-  // BOTÓN 2: gira 90° a la izquierda (mira hacia el inicio) → regresa → gira 180° (mira como al empezar)
-  const PASOS2=[['gira 90° a la izquierda',0,0,'-G','g90'],['quieto',0,0,0,0.3],['regresa al inicio',0,'L',0,'R'],['quieto',0,0,0,0.3],
-                ['gira 180°',0,0,'-G','g180']];
+  // BOTÓN 2 (Ariel, 24 de nov. de 2026): audio 8 → gira 90° a la izquierda → avanza de regreso (ya sin el giro de 180°)
+  const PASOS2=[['audio',0,0,0,'A8'],['gira 90° a la izquierda',0,0,'-G','g90'],['quieto',0,0,0,0.3],['regresa al inicio',0,'L',0,'R']];
   const val=v=>v==='L'?LENTO():v==='-G'?-RAPIDO():v==='G'?RAPIDO():v;
   const durPaso=d=>d==='T'?segAv():d==='R'?segReg():d==='g90'?segGiroR():d==='g90d'?segGiroD():d==='g180'?segGiro180():d==='Q1'?segQ1():d==='Q2'?segQ2():d;
   const tg=id=>{const b=$(id);return !!(b&&b.dataset&&b.dataset.v==='1')};
@@ -2226,7 +2238,7 @@ const CMD=(()=>{
   // Sube T s y baja T s (cada uno con sus segundos), una y otra vez, mientras el robot avanza, gira y suenan los audios.
   // Al terminar: si quedó a medio subir, baja la parte que subió; si quedó a medio bajar, termina de bajar;
   // luego la bajada extra del asta y la inclinación se recalibra abajo (H). Con «alto» o PARO solo se detienen.
-  function oscilar(){
+  function oscilar(conA=true,conI=true){
     const st={parar:false,d:1,t0:0,ta:0,ti:0,fin:null};
     const pausa=ms=>new Promise(r=>setTimeout(r,ms));
     const listo=()=>st.parar||VOZ.cancelar||paro;
@@ -2234,8 +2246,8 @@ const CMD=(()=>{
       while(!listo()){
         for(const d of [1,-1]){
           if(listo())break;
-          st.d=d;st.t0=Date.now();st.ta=(d>0?segAstaSube():segAstaBaja())*1000;st.ti=(d>0?segInclSube():segInclBaja())*1000;
-          Object.assign(VOZ,{asta:d,astaHasta:st.t0+st.ta,incl:d,inclHasta:st.t0+st.ti});
+          st.d=d;st.t0=Date.now();st.ta=conA?(d>0?segAstaSube():segAstaBaja())*1000:0;st.ti=conI?(d>0?segInclSube():segInclBaja())*1000:0;
+          if(conA)Object.assign(VOZ,{asta:d,astaHasta:st.t0+st.ta});if(conI)Object.assign(VOZ,{incl:d,inclHasta:st.t0+st.ti});
           while(!listo()&&Date.now()-st.t0<Math.max(st.ta,st.ti))await pausa(50);
           if(listo())return;                                   // se cortó en medio de este tramo
           VOZ.astaHasta=0;VOZ.inclHasta=0;await pausa(120)}
@@ -2249,12 +2261,12 @@ const CMD=(()=>{
         // cuánto falta bajar para volver abajo
         const fa=Math.min(1,cortado/(st.ta||1)),fi=Math.min(1,cortado/(st.ti||1));
         let ba=0,bi=0;
-        if(st.d>0){ba=fa*segAstaBaja()*1000;bi=fi*segInclBaja()*1000}            // iba subiendo: baja lo que subió
+        if(st.d>0){ba=conA?fa*segAstaBaja()*1000:0;bi=conI?fi*segInclBaja()*1000:0}   // iba subiendo: baja lo que subió
         else if(st.d<0){ba=(1-fa)*st.ta;bi=(1-fi)*st.ti}                          // iba bajando: termina de bajar
         if(ba>50||bi>50){const t0=Date.now();
           if(ba>50)Object.assign(VOZ,{asta:-1,astaHasta:t0+ba});if(bi>50)Object.assign(VOZ,{incl:-1,inclHasta:t0+bi});
           while(!VOZ.cancelar&&!paro&&Date.now()-t0<Math.max(ba,bi))await pausa(50);VOZ.astaHasta=0;VOZ.inclHasta=0}
-        await terminarAbajo(true,inclFinal!=='arriba')}};   // si al final la inclinación va arriba, no se recalibra abajo
+        await terminarAbajo(conA,conI&&inclFinal!=='arriba')}};   // si al final la inclinación va arriba, no se recalibra abajo
   }
   // un tramo: d = 1 sube, -1 baja. El asta y/o la inclinación, cada uno con sus segundos (a la vez)
   async function tramo(d,conAsta,conIncl){
@@ -2300,8 +2312,35 @@ const CMD=(()=>{
   if($('lbProbarDer'))$('lbProbarDer').onclick=()=>probar('der');
   if($('lbProbar180'))$('lbProbar180').onclick=()=>probar('180');
   if($('lbProbarAv'))$('lbProbarAv').onclick=()=>probar(false);
+  // ── FERIA (Ariel, 24 de nov. de 2026): 3 botones. Cada uno detiene al anterior; el mismo botón otra vez lo detiene.
+  //   1 Liebre: audio 5 una vez → el asta sube y baja con los tiempos de la rutina, sin parar
+  //   2 Lanzador: audio 6 una vez → la inclinación sube (tiempo «Sube» de la rutina) + recolección + shooter
+  //   3 Audio 7: solo el audio
+  const FERIA={n:0,osc:null};
+  const feriaMarca=()=>{for(const k of [1,2,3]){const b=$('lbFeria'+k);if(b)b.classList.toggle('corriendo',FERIA.n===k)}};
+  async function feriaParar(ordenado){        // ordenado=true: deja todo abajo; con «alto» o PARO solo se detiene
+    const n=FERIA.n,osc=FERIA.osc;FERIA.n=0;FERIA.osc=null;feriaMarca();
+    if(n===1&&osc){if(ordenado&&!paro&&conectado())await osc.terminar('abajo');else osc.parar()}
+    if(n===2){VOZ.inclHasta=0;if(conectado()){if(recogiendo)setRecoger(false);if(elevando)setElevar(false);if(disparando)setDisparo(false);
+      if(ordenado&&!paro)enviar('H',true)}}           // la inclinación vuelve abajo
+  }
+  async function feria(n){
+    const era=FERIA.n;
+    if(era)await feriaParar(true);
+    if(era===n&&n!==3)return;                          // el mismo botón: solo detener
+    if(n===3){sonar(7);const b=$('lbFeria3');if(b){b.classList.add('corriendo');setTimeout(()=>b.classList.remove('corriendo'),1200)}return}
+    if(!conectado())return decir('El robot no está conectado.');
+    if(paro)return decir('El paro está activo. Di «reanuda» primero.');
+    if(VOZ.corriendo){alto();await dormir(400)}       // si corría una rutina, primero la detiene
+    VOZ.cancelar=false;FERIA.n=n;feriaMarca();
+    if(n===1){sonar(5);FERIA.osc=oscilar(true,false)}
+    else{sonar(6);
+      const ms=segInclSube()*1000;Object.assign(VOZ,{incl:1,inclHasta:Date.now()+ms});
+      setRecoger(true);setElevar(true);setDisparo(true)}
+  }
+  for(const k of [1,2,3]){const b=$('lbFeria'+k);if(b)b.onclick=()=>feria(k)}
   // tocar PARO en la pantalla también cancela cualquier orden o rutina en curso
-  $('paro').addEventListener('click',()=>{VOZ.cancelar=true;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0},true);
+  $('paro').addEventListener('click',()=>{VOZ.cancelar=true;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;feriaParar(false)},true);
 
   async function intentar(texto){
     const t=norm(texto);
@@ -2384,7 +2423,7 @@ try{const g=localStorage.getItem('lbGiro');if(g)$('lbGiro').value=g}catch(_){}
 // los audios del recorrido vuelven UNA vez a 1, 3, 2, 4: en el dispositivo podía quedar guardado otro número
 // (por eso la rutina tocaba el audio 2 al empezar aunque el botón «Audio 1» sonaba bien) — 20 de nov. de 2026
 try{if(!localStorage.getItem('lbAudV3')){[['lbRutA1',1],['lbRutA2',3],['lbRutA3',2],['lbRutA4',4]].forEach(([k,v])=>localStorage.setItem(k,v));localStorage.setItem('lbAudV3','1')}}catch(_){}
-{const INI={lbRutT:2,lbRutAv:20,lbGiroR:0.5,lbRutGi:60,lbGiroD:0.5,lbGiro180:1,lbRutQ1:0.5,lbRutQ2:1,lbRutA1:1,lbRutP1:3,lbRutA2:3,lbRutP2:3,lbRutA3:2,lbRutP3:3,lbRutA4:4,lbRutP4:3,lbRutAs:2,lbRutAb:1.6,lbRutAx:0.5,lbRutIs:1,lbRutIb:1,lbIncFin:1,lbIPot:60,lbIPotB:60,lbIMs:30,lbIN:1};
+{const INI={lbRutT:2,lbRutAv:20,lbGiroR:0.5,lbRutGi:60,lbGiroD:0.5,lbRutP8:3,lbRutQ1:0.5,lbRutQ2:1,lbRutA1:1,lbRutP1:3,lbRutA2:3,lbRutP2:3,lbRutA3:2,lbRutP3:3,lbRutA4:4,lbRutP4:3,lbRutAs:2,lbRutAb:1.6,lbRutAx:0.5,lbRutIs:1,lbRutIb:1,lbIncFin:1,lbIPot:60,lbIPotB:60,lbIMs:30,lbIN:1};
   const pintar=()=>{const e=$('lbRutinaEst');if(e&&!$('lbRutina').classList.contains('corriendo'))e.textContent=CMD.etiqueta();
     const e2=$('lbRutina2Est');if(e2&&!$('lbRutina2').classList.contains('corriendo'))e2.textContent=CMD.etiqueta2();
     const fs=v=>(Math.round(v*10)/10).toString().replace('.',',');
