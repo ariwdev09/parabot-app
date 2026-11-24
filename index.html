@@ -195,6 +195,9 @@ body[data-mod=liebre] .sil .p-liebre,body[data-mod=lanzador] .sil .p-lanz{--l:co
 .pbar .llena{position:absolute;inset:0 auto 0 0;border-radius:8px;background:var(--datos)}
 .pbar .marca{position:absolute;top:-3px;bottom:-3px;width:3px;border-radius:2px;background:var(--fg);opacity:.75}
 .pbar b{text-align:right;font-variant-numeric:tabular-nums}.pnota{color:var(--muted);font-size:11px}
+.pbarras .pbar{grid-template-columns:86px 1fr 64px}
+.pzona-wrap{display:grid;grid-template-columns:1fr;gap:10px;justify-items:center}.pzona-wrap svg{width:260px;height:236px}.pzona-wrap .pbarras{width:100%}
+.pvista{display:flex;gap:10px;align-items:center}.pvista svg{width:84px;height:126px;flex:none}.pzonas-v{flex-direction:column;flex:1}
 .filtros{grid-column:1/-1;flex-direction:row;align-items:center;flex-wrap:wrap;gap:8px;padding:7px 10px;border-top-color:var(--datos)}
 .filtros h2{margin:0;font:700 14px var(--disp);letter-spacing:.08em;text-transform:uppercase;color:var(--datos)}
 .filtros label{display:flex;align-items:center;gap:6px;font:600 11px var(--disp);color:var(--muted)}
@@ -541,7 +544,8 @@ body[data-mod=asistente] #lbMicFlot{display:none}
    <div class="bloque" style="--c:var(--acc)" id="bPaleta">
     <div class="btit">Paleta · aciertos<span class="der"><small id="pEst">sin conectar</small></span></div>
     <div class="par" style="align-items:center"><div class="valor" id="pTotal">0</div><button class="mec" id="pCon">Conectar</button></div>
-    <div class="pzonas"><span id="pZ1">Fila 1<b>0</b></span><span id="pZ2">Fila 2<b>0</b></span><span id="pZ3">Fila 3<b>0</b></span><span id="pZ4">Fila 4<b>0</b></span></div>
+    <div class="pvista"><svg id="pPaletaSvg" viewBox="0 0 200 300" role="img" aria-label="Paleta: dónde golpea"></svg>
+    <div class="pzonas pzonas-v"><span id="pZ4">Alta<b>0</b></span><span id="pZ3">Media alta<b>0</b></span><span id="pZ2">Media baja<b>0</b></span><span id="pZ1">Baja<b>0</b></span></div></div>
     <div class="ajuste"><button class="btn" id="pUmMenos" title="Más sensible (todas las filas)">−</button><small id="pUm" style="text-align:center;flex:1">Umbral —</small><button class="btn" id="pUmMas" title="Hay que golpear más fuerte (todas las filas)">+</button></div>
     <button class="mec" id="pReset" title="El contador vuelve a 0 y empieza otra sesión; lo anterior queda en Datos → Paleta">Nueva sesión (contador a 0)</button>
    </div>
@@ -581,7 +585,7 @@ body[data-mod=asistente] #lbMicFlot{display:none}
    <h2>Datos del corredor</h2>
    <label>Corredor <select id="fCorredor"><option value="">Todos</option></select></label>
    <div class="seg" id="dVista" style="--c:var(--datos)"><button data-v="res" class="sel">Resumen</button><button data-v="ana">Análisis</button><button data-v="his">Historial</button><button data-v="pal">Paleta</button></div>
-   <span class="der"><button class="chico" id="dAjustes">Ajustes</button><button class="chico" id="dCsv">CSV</button><button class="chico" id="dBorrar">Borrar</button></span>
+   <span class="der"><button class="chico" id="dIA" title="La IA analiza estos datos y responde en voz alta">✦ Analizar con IA</button><button class="chico" id="dEjemplo" title="Carga recorridos y sesiones de paleta de ejemplo para ver el análisis">Datos de ejemplo</button><button class="chico" id="dAjustes">Ajustes</button><button class="chico" id="dCsv">CSV</button><button class="chico" id="dBorrar">Borrar</button></span>
   </div>
   <div class="izqdatos" data-p="res">
    <div class="kpis">
@@ -635,8 +639,8 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <div class="kpi"><small>Sesiones</small><b id="pkSes">0</b><span id="pkSesSub">—</span></div>
    </div>
    <div class="bloque">
-    <div class="btit">Filas de la paleta<small class="corto"> (% de aciertos)</small></div>
-    <div class="pbarras" id="pdZonas"></div>
+    <div class="btit">Dónde golpea en la paleta<small class="corto"> (% de aciertos)</small></div>
+    <div class="pzona-wrap"><svg id="pdPaletaSvg" viewBox="0 0 330 300" role="img" aria-label="Mapa de calor de la paleta"></svg><div class="pbarras" id="pdZonas"></div></div>
     <small class="pnota">Barra llena: última sesión · marca: todas las sesiones</small>
    </div>
   </div>
@@ -649,7 +653,7 @@ body[data-mod=asistente] #lbMicFlot{display:none}
    <p class="narr" id="pdTexto"></p>
    <ul class="lista" id="pdRecs"></ul>
    <div class="btit">Sesiones</div>
-   <div class="tabla"><table><thead><tr><th>Fecha</th><th>Jugador</th><th>Min</th><th>Aciertos</th><th>F1/F2/F3/F4</th><th>Ritmo</th><th>Fuerza</th></tr></thead><tbody id="pdTabla"></tbody></table></div>
+   <div class="tabla"><table><thead><tr><th>Fecha</th><th>Jugador</th><th>Min</th><th>Aciertos</th><th>Baja/M.baja/M.alta/Alta</th><th>Ritmo</th><th>Fuerza</th></tr></thead><tbody id="pdTabla"></tbody></table></div>
   </div>
  </section>
 
@@ -684,9 +688,9 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <span><b>2 · Regreso al inicio</b><small id="lbRutina2Est">🔊8 · ↺90° · regresa</small></span>
    </button>
    <div class="rut-sec" style="margin:6px 0 2px">FERIA · toca otra vez para detener</div>
-   <button class="ia-rutina" id="lbFeria1" title="Audio 5 y luego el asta sube y baja (con los tiempos de la rutina) hasta que lo detengas">
+   <button class="ia-rutina" id="lbFeria1" title="Audio 5 y el asta sube una vez (tiempo «Sube» de la rutina). Al detenerlo, el asta baja">
     <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34V8"/><path d="M14 14l6-6 6 6"/><path d="M14 28l6 6 6-6"/></svg>
-    <span><b>Módulo Liebre</b><small id="lbFeria1Est">🔊5 · el asta sube y baja</small></span>
+    <span><b>Módulo Liebre</b><small id="lbFeria1Est">🔊5 · el asta sube</small></span>
    </button>
    <button class="ia-rutina" id="lbFeria2" title="Audio 6, sube la inclinación (tiempo de la rutina) y enciende la recolección y el shooter hasta que lo detengas">
     <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="13" cy="27" r="6"/><path d="M19 24l14-12"/><path d="M27 12h6v6"/></svg>
@@ -999,11 +1003,33 @@ function ayudaAndroid(){                    // los pasos, en grande, cuando el r
    +'<li>Ajustes → Aplicaciones → <b>Chrome</b> → Permisos → <b>Dispositivos cercanos: Permitir</b> (y Ubicación: Permitir, con la ubicación encendida).</li>'
    +'<li>En esta página, toca el candado junto a la dirección → <b>Dispositivos serie: Permitir</b>.</li>'
    +'<li>Cierra Chrome desde las apps recientes, ábrelo otra vez y toca <b>Conectar → HC-05</b>: elige <b>HC-06</b>.</li></ol>'
-   +'<p style="margin:0 0 12px;color:#bbb">'+v+'</p>'
-   +'<button id="ayudaOk" style="font:inherit;font-weight:700;padding:8px 18px;border-radius:10px;border:0;background:#f5b400;color:#111">Entendido</button></div>';
+   +'<p style="margin:0 0 8px;color:#bbb">'+v+'</p>'
+   +'<div id="diagBT" style="font:13px/1.4 monospace;background:#000;border:1px solid #444;border-radius:8px;padding:8px;margin:0 0 10px;white-space:pre-wrap">Revisando…</div>'
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+   +'<button id="diagTodos" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid #f5b400;background:#222;color:#f5b400">Buscar TODOS los módulos</button>'
+   +'<button id="diagFiltro" style="font:inherit;padding:8px 12px;border-radius:10px;border:1px solid #f5b400;background:#222;color:#f5b400">Buscar módulos serie</button>'
+   +'<button id="ayudaOk" style="font:inherit;font-weight:700;padding:8px 18px;border-radius:10px;border:0;background:#f5b400;color:#111">Cerrar</button></div></div>';
   d.style.display='flex';$('ayudaOk').onclick=()=>{d.style.display='none'};
+  // diagnóstico: con esto se sabe POR QUÉ no aparece (toma una foto de este recuadro)
+  const and=(navigator.userAgent.match(/Android ([\d.]+)/)||[])[1]||'?';
+  const linea=(k,v)=>k+': '+v;
+  const out=[linea('Android',and),linea('Chrome',CHROME_V||'?'),linea('Página segura (https)',window.isSecureContext?'sí':'NO'),
+             linea('Web Serial (HC-05/HC-06)','serial' in navigator?'sí':'NO — actualiza Chrome'),
+             linea('Web Bluetooth (HM-10)','bluetooth' in navigator?'sí':'no')];
+  const pinta=()=>{$('diagBT').textContent=out.join('\n')};pinta();
+  if('serial' in navigator)navigator.serial.getPorts().then(ps=>{out.push(linea('Módulos ya autorizados',ps.length));pinta()}).catch(e=>{out.push('getPorts: '+e.name);pinta()});
+  if(navigator.permissions)navigator.permissions.query({name:'bluetooth'}).then(s=>{out.push(linea('Permiso Bluetooth',s.state));pinta()}).catch(()=>{});
+  const buscar=async opts=>{
+    if(!('serial' in navigator)){out.push('No hay Web Serial en este Chrome: actualízalo.');pinta();return}
+    try{const pr=await navigator.serial.requestPort(opts);let i={};try{i=pr.getInfo()}catch(_){}
+      out.push('ELEGIDO: '+JSON.stringify(i)+' → conectando…');pinta();puertoElegido=pr;d.style.display='none';conectarClasico()}
+    catch(e){out.push((opts&&opts.filters?'Con filtro':'Sin filtro')+': '+e.name+' — '+(e.message||'').slice(0,90));pinta()}};
+  $('diagTodos').onclick=()=>buscar({allowedBluetoothServiceClassIds:[SPP]});
+  $('diagFiltro').onclick=()=>buscar({filters:[{bluetoothServiceClassId:SPP}]});
 }
+let puertoElegido=null;
 async function pedirPuerto(){
+  if(puertoElegido){const x=puertoElegido;puertoElegido=null;return x}   // el que elegiste en el diagnóstico
   if(!ES_ANDROID)return await navigator.serial.requestPort();
   if(!saltarGuardado){const g=await puertoGuardado();if(g){saltarGuardado=true;return g}}   // si falla, la próxima vez muestra la lista
   if(sinFiltro)return await navigator.serial.requestPort({allowedBluetoothServiceClassIds:[SPP]});
@@ -1079,7 +1105,7 @@ const PALETA=(()=>{
   //  · el anterior (ParaBot-Paleta): 3 zonas, envía H,zona,fuerza,total y recibe U,valor / R.
   const NUS='6e400001-b5a3-f393-e0a9-e50e24dcca9e',NUS_RX='6e400002-b5a3-f393-e0a9-e50e24dcca9e',NUS_TX='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
   const OLD='7b1e0001-5061-7261-426f-742d50616c65',OLD_CH='7b1e0002-5061-7261-426f-742d50616c65',OLD_ORD='7b1e0003-5061-7261-426f-742d50616c65';
-  const NZ=4,NOM=['fila 1','fila 2','fila 3','fila 4'];
+  const NZ=4,NOM=['zona baja','zona media baja','zona media alta','zona alta'];   // fila 1 (2 discos, abajo) … fila 4 (3 discos en óvalo, arriba)
   const st={dev:null,ord:null,tipo:'',total:0,z:[0,0,0,0],umbrales:null,ultimo:null,conectada:false,hist:[],ses:0,ver:null};
   // historial: cada golpe {t: hora, z: fila 0-3, f: fuerza 0-4095 o null, s: sesión, n: jugador}. Se guarda en este dispositivo.
   try{st.hist=JSON.parse(localStorage.getItem('pGolpes')||'[]')}catch(_){st.hist=[]}
@@ -1090,6 +1116,7 @@ const PALETA=(()=>{
   const nuevaSesion=()=>{st.ses=Date.now();st.total=0;st.z=[0,0,0,0];st.ultimo=null;guardarH()};
   {const u=st.hist[st.hist.length-1];if(u&&u.s===st.ses&&Date.now()-u.t<300000){st.hist.filter(g=>g.s===st.ses).forEach(g=>{st.total++;st.z[g.z]++})}else st.ses=0}
   const pinta=()=>{$('pTotal').textContent=st.total;for(let i=0;i<NZ;i++)$('pZ'+(i+1)).querySelector('b').textContent=st.z[i];
+    {const tt=st.total||0;$('pPaletaSvg').innerHTML=svgPaleta(st.z.map(v=>tt?Math.round(v/tt*100):0),st.z,st.ultimo?NOM.indexOf(st.ultimo.zona):-1)}
     $('pUm').textContent=st.umbrales?'Umbral '+st.umbrales.join(' / '):'Umbral —';
     const e=$('pEst');e.textContent=st.conectada?'conectada':'sin conectar';e.classList.toggle('on',st.conectada);
     $('pCon').textContent=st.conectada?'Desconectar':'Conectar'};
@@ -1103,6 +1130,7 @@ const PALETA=(()=>{
     if(!st.ses||(u&&ahora-u.t>300000)||(u&&u.s===st.ses&&u.n!==jugador()))nuevaSesion();   // 5 min sin golpes o cambió el jugador: sesión nueva
     st.hist.push({t:ahora,z,f:fuerza==null?null:fuerza,s:st.ses,n:jugador()});guardarH();
     st.total++;st.z[z]++;st.ultimo={zona:NOM[z],fuerza,hora:ahora};pinta();tono();
+    try{if(typeof NV!=='undefined')NV.decir('¡Punto!','respuesta')}catch(_){}   // el «oficial»: cada acierto se anuncia
     if(typeof PALDATOS!=='undefined')PALDATOS.siVisible();
     const el=$('pZ'+(z+1)),t=$('pTotal');el.classList.add('golpe');t.classList.add('golpe');
     setTimeout(()=>{el.classList.remove('golpe');t.classList.remove('golpe')},350);
@@ -1113,7 +1141,7 @@ const PALETA=(()=>{
     // los mensajes de la paleta llegan sin salto de línea al final (uno por notificación): también cuentan
     if(resto&&/^[GEVHU],/.test(resto)&&!/,$/.test(resto)){lineas.push(resto);resto=''}
     for(const l of lineas){const p=l.trim().split(','),k=p[0];
-      if(k==='G'&&+p[2]>=1&&+p[2]<=NZ)golpe(+p[2]-1,null);                       // programa de Ariel: G,total,fila,...
+      if(k==='G'&&+p[2]>=1&&+p[2]<=NZ)golpe(+p[2]-1,p.length>=8&&p[7]!==''?+p[7]:null);   // v2: G,total,fila,c1..c4,pico                       // programa de Ariel: G,total,fila,...
       else if(k==='H'&&+p[1]>=1&&+p[1]<=3)golpe(+p[1]-1,+p[2]||0);              // programa anterior: H,zona,fuerza,total
       else if(k==='E'&&p.length>=10){st.umbrales=p.slice(6,10).map(Number);pinta()}   // E,total,c1..c4,u1..u4
       else if(k==='V'){st.ver=p.slice(1).map(Number);$('pEst').textContent='niveles: '+st.ver.join(' / ')}
@@ -1547,6 +1575,42 @@ $('irDatos').onclick=()=>setModulo('datos');
 $('dQuien').onclick=$('dAjustes').onclick=()=>$('ajustes').classList.remove('oculto');
 $('dCerrar').onclick=()=>$('ajustes').classList.add('oculto');
 $('ajustes').onclick=e=>{if(e.target===$('ajustes'))$('ajustes').classList.add('oculto')};
+// ── dibujo de la paleta: 3 discos en óvalo arriba, 3 y 3 en filas horizontales y 2 abajo (Ariel, 24 de nov. de 2026) ──
+// z: 0 baja · 1 media baja · 2 media alta · 3 alta. pcts: % de aciertos por zona; ult: zona del último golpe (se resalta)
+function svgPaleta(pcts,cuentas,ult,conTexto){
+  const D=[[[78,196],[122,196]],[[58,152],[100,152],[142,152]],[[58,108],[100,108],[142,108]],[[64,64],[100,50],[136,64]]];
+  let s='<ellipse cx="100" cy="126" rx="90" ry="118" style="fill:var(--panel2);stroke:var(--line);stroke-width:3"/>'
+       +'<rect x="88" y="238" width="24" height="58" rx="7" style="fill:var(--panel2);stroke:var(--line);stroke-width:3"/>';
+  const mx=Math.max(1,...(pcts||[0]));
+  D.forEach((zona,z)=>{const p=(pcts&&pcts[z])||0,op=(0.12+0.88*p/mx).toFixed(2),marca=z===ult;
+    zona.forEach(([x,y])=>{s+='<circle cx="'+x+'" cy="'+y+'" r="15" style="fill:var(--datos);fill-opacity:'+op+';stroke:'+(marca?'var(--fg)':'var(--line)')+';stroke-width:'+(marca?4:2)+'"/>'});
+    if(conTexto){const y=zona[0][1],nom=['Baja','Media baja','Media alta','Alta'][z];
+      s+='<line x1="'+(zona[zona.length-1][0]+18)+'" y1="'+y+'" x2="196" y2="'+y+'" style="stroke:var(--line);stroke-dasharray:3 3"/>'
+        +'<text x="202" y="'+(y-3)+'" font-size="15" font-weight="700" style="fill:var(--fg)">'+nom+'</text>'
+        +'<text x="202" y="'+(y+15)+'" font-size="14" style="fill:var(--muted)">'+p+' %'+(cuentas?' · '+cuentas[z]:'')+'</text>'}});
+  return s}
+// datos de ejemplo: un corredor con 8 recorridos y un jugador con 6 sesiones de paleta. Se marcan para poder quitarlos.
+function hayEjemplo(){return registros.some(r=>r.demo)||(typeof PALETA!=='undefined'&&PALETA.st.hist.some(g=>g.ej))}
+function pintarBotonEjemplo(){const b=$('dEjemplo');if(b)b.textContent=hayEjemplo()?'Quitar ejemplo':'Datos de ejemplo'}
+function cargarEjemplo(){
+  if(hayEjemplo()){registros=registros.filter(r=>!r.demo);if(typeof PALETA!=='undefined'){PALETA.st.hist=PALETA.st.hist.filter(g=>!g.ej);PALETA.guardarH()}
+    guardarReg();if(typeof PALDATOS!=='undefined')PALDATOS.pintar();aCorredores();pintarBotonEjemplo();return}
+  const D=86400000,hoy=Date.now(),ts=[21.0,20.4,20.6,19.9,19.5,19.7,19.0,18.6];
+  ts.forEach((t,i)=>registros.push({f:new Date(hoy-(8-i)*D).toISOString(),n:'Corredor de ejemplo',tipo:'Línea',t,d:100,est:100,v:+(100/t).toFixed(2),k:i<3?0.35:0.6,p:true,vb:0,demo:true}));
+  if(typeof PALETA!=='undefined'){
+    // reparto por zona [baja, media baja, media alta, alta]: al inicio golpea casi todo abajo; con las sesiones sube
+    const rep=[[.34,.33,.2,.13],[.31,.32,.22,.15],[.28,.31,.24,.17],[.25,.3,.26,.19],[.22,.29,.27,.22],[.2,.28,.28,.24]],tot=[21,24,26,25,29,32];
+    rep.forEach((r,s)=>{const ini=hoy-(6-s)*D+15*3600000;for(let k=0;k<tot[s];k++){const x=((k*0.618+s*0.21)%1);let a=0,z=0;for(z=0;z<4;z++){a+=r[z];if(x<a)break}
+      PALETA.st.hist.push({t:ini+k*13000,z:Math.min(z,3),f:1500+((k*37+s*91)%1700),s:ini,n:'Jugador de ejemplo',ej:true})}});
+    PALETA.guardarH()}
+  guardarReg();aCorredores();if(typeof PALDATOS!=='undefined')PALDATOS.pintar();pintarBotonEjemplo();
+}
+$('dEjemplo').onclick=cargarEjemplo;
+$('dIA').onclick=()=>{const v=(document.querySelector('#dVista .sel')||{dataset:{}}).dataset.v;
+  const q=v==='pal'?'Analiza los datos de la paleta: en qué zona acierta más, cuál debe practicar, si está mejorando y qué ajuste del lanzador recomiendas.'
+                   :'Analiza los recorridos del corredor: su velocidad, su constancia, si está mejorando y qué le recomiendas.';
+  setModulo('asistente');setTimeout(()=>aPreguntar(q),300)};
+setTimeout(pintarBotonEjemplo,500);
 $('dBorrar').onclick=()=>{if(registros.length&&confirm('¿Borrar todos los recorridos?')){registros=[];guardarReg()}};
 $('dCsv').onclick=()=>{
   const filas=[['N','Fecha','Hora','Corredor','Modo','Tiempo (s)','Distancia (m)','Distancia estimada (m)','Velocidad (m/s)','Velocidad (km/h)']]
@@ -1659,7 +1723,7 @@ const PALDATOS=(()=>{
     if(tr!=null)recs.push(tr>0.5?['Va mejorando','Suma unos '+fmt(tr,1)+' aciertos más por sesión.']:tr<-0.5?['Bajó un poco','Unos '+fmt(-tr,1)+' aciertos menos por sesión: revisa cansancio o la velocidad del shooter.']:['Estable','Mantiene la cantidad de aciertos entre sesiones.']);
     if(u.fuerza!=null&&u.fuerza<20)recs.push(['Golpes suaves','Fuerza promedio '+u.fuerza+' %. Si no cuenta golpes reales, baja el umbral de la paleta.']);
     return {ss,u,tot,zt,pu,pt,tr,debil,fuerte,recs}}
-  const objFilas=a=>Object.fromEntries(NOM.map((n,i)=>[n.replace(' ','_'),a[i]]));
+  const objFilas=a=>Object.fromEntries(NOM.map((n,i)=>[n.replace(/ /g,'_'),a[i]]));
   // ── lo que recibe la IA (solo números y hechos; la IA explica) ──
   function resumenIA(){
     const a=analisis();if(!a)return {sesiones:0,nota:'Todavía no hay golpes de la paleta guardados.'};
@@ -1681,7 +1745,8 @@ const PALDATOS=(()=>{
     const u=a.u;$('pkTot').textContent=u.total;$('pkTotSub').textContent='última sesión · '+a.tot+' en total';
     $('pkRit').textContent=u.ritmo==null?'—':fmt(u.ritmo,1);$('pkFue').textContent=u.fuerza==null?'—':u.fuerza;
     $('pkSes').textContent=a.ss.length;$('pkSesSub').textContent=u.n;
-    $('pdZonas').innerHTML=NOM.map((n,i)=>'<div class="pbar"><span>'+Nom(n)+'</span><div class="pista"><div class="llena" style="width:'+a.pu[i]+'%"></div>'
+    $('pdPaletaSvg').innerHTML=svgPaleta(a.pt,a.zt,-1,true);
+    $('pdZonas').innerHTML=[3,2,1,0].map(i=>[NOM[i],i]).map(([n,i])=>'<div class="pbar"><span>'+Nom(n.replace('zona ',''))+'</span><div class="pista"><div class="llena" style="width:'+a.pu[i]+'%"></div>'
       +'<div class="marca" style="left:calc('+a.pt[i]+'% - 1px)"></div></div><b>'+a.pu[i]+' % · '+u.z[i]+'</b></div>').join('');
     const ss=a.ss.slice(-12),W=320,H=150,m=26,mx=Math.max(...ss.map(x=>x.total),1),bw=(W-m-6)/ss.length;
     let g='<line x1="'+m+'" y1="'+(H-18)+'" x2="'+W+'" y2="'+(H-18)+'" stroke="var(--line)"/>';
@@ -2326,7 +2391,9 @@ const CMD=(()=>{
   const feriaMarca=()=>{for(const k of [1,2,3]){const b=$('lbFeria'+k);if(b)b.classList.toggle('corriendo',FERIA.n===k)}};
   async function feriaParar(ordenado){        // ordenado=true: deja todo abajo; con «alto» o PARO solo se detiene
     const n=FERIA.n,osc=FERIA.osc;FERIA.n=0;FERIA.osc=null;feriaMarca();
-    if(n===1&&osc){if(ordenado&&!paro&&conectado())await osc.terminar('abajo');else osc.parar()}
+    if(n===1){const subio=Math.min(Date.now()-(FERIA.t0||0),FERIA.ms||0);VOZ.astaHasta=0;
+      if(ordenado&&!paro&&conectado()&&subio>50){const baja=subio/((FERIA.ms||1))*segAstaBaja()*1000;   // baja lo que subió
+        Object.assign(VOZ,{asta:-1,astaHasta:Date.now()+baja});await dormir(baja);VOZ.astaHasta=0}}
     if(n===2){VOZ.inclHasta=0;if(conectado()){if(recogiendo)setRecoger(false);if(elevando)setElevar(false);if(disparando)setDisparo(false);
       if(ordenado&&!paro)enviar('H',true)}}           // la inclinación vuelve abajo
   }
@@ -2339,12 +2406,22 @@ const CMD=(()=>{
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     if(VOZ.corriendo){alto();await dormir(400)}       // si corría una rutina, primero la detiene
     VOZ.cancelar=false;FERIA.n=n;feriaMarca();
-    if(n===1){sonar(5);FERIA.osc=oscilar(true,false)}
+    if(n===1){sonar(5);const ms=segAstaSube()*1000;FERIA.t0=Date.now();FERIA.ms=ms;Object.assign(VOZ,{asta:1,astaHasta:Date.now()+ms})}
     else{sonar(6);
       const ms=segInclSube()*1000;Object.assign(VOZ,{incl:1,inclHasta:Date.now()+ms});
       setRecoger(true);setElevar(true);setDisparo(true)}
   }
   for(const k of [1,2,3]){const b=$('lbFeria'+k);if(b)b.onclick=()=>feria(k)}
+  // audios del robot: 1 «Hola, estimado jurado» · 2 «Soy ParaBot» · 3 «Hola, público presente» · 4 «1, 2, 3, ¡vamos!»
+  //                   5 «Módulo liebre» · 6 «Módulo lanzador adaptativo» · 7 «Módulo guardián» · 8 «Gracias»
+  function audioVoz(t){
+    if(/^(que|como|cual|cuanto|cuando|por que|porque|quien|donde)\b/.test(t)&&!/\b(quien eres|como te llamas)\b/.test(t))return 0;
+    if(/\b(despidete|despide|despedida|adios|chau|chao|gracias|agradece)\b/.test(t))return 8;
+    if(/\b(saluda|saludes|saludo|saludar|di hola|dile hola|di hola a)\b/.test(t))return /\bjurado\b/.test(t)?1:3;
+    if(/\b(presentate|presenta te|presentarte|quien eres|como te llamas|di tu nombre|di quien eres)\b/.test(t))return 2;
+    if(/\b(uno,? dos,? tres|1,? 2,? 3|cuenta hasta tres|a la cuenta de tres|di vamos)\b|^vamos\b/.test(t))return 4;
+    return 0}
+  function ojosFeliz(){try{if(!ojosOn)$('bOjos').click();const b=document.querySelector('#expr button[data-e="1"]');if(b)b.click()}catch(_){}}
   // la voz: 1 = liebre, 2 = lanzador, 3 = guardián (audio 7); 0 = apagar el módulo; null = no es una orden de la feria
   // (Vosk y Whisper escriben «módulo» como «modo», «mulo», «múbolo»…: basta con el nombre del módulo)
   function feriaVoz(t){
@@ -2361,6 +2438,8 @@ const CMD=(()=>{
     if(/\b(que puedo decir|que ordenes|ayuda|comandos)\b/.test(t)){
       decir('Puedes decir: adelante tres segundos, gira a la derecha noventa grados, más rápido, sube el asta, sigue la línea, enciende el shooter, pon el audio dos, o alto.');return true}
     if(/^(alto|para|parate|detente|deten|frena|cancela|stop)\b.*\brutina\b/.test(t)){alto();return true}   // «para la rutina» nunca la arranca
+    // audios de la feria por voz (Ariel, 25 de nov. de 2026): suena el audio en el robot y los ojos se ponen felices
+    {const n=audioVoz(t);if(n){if(conectado()){sonar(n);ojosFeliz()}else decir('El robot no está conectado.');return true}}
     // botones de la FERIA por voz: «activa / presenta / inicia el módulo liebre | lanzador | guardián», «apaga el módulo…»
     {const f=feriaVoz(t);if(f!==null){if(f===0){if(FERIA.n)await feriaParar(true);decir('Listo.')}else if(FERIA.n!==f)await feria(f);return true}}
     if(/\b(rutina (2|dos)|segunda rutina|boton (2|dos)|regres\w* al inicio|vuelve al inicio)\b/.test(t)){rutina2();return true}
@@ -2382,7 +2461,7 @@ const CMD=(()=>{
       r.onend=()=>setTimeout(vuelta,100);try{r.start()}catch(_){}};
     setTimeout(vuelta,800)}
   function urgente(texto){const t=norm(texto);
-    if(feriaVoz(t)!==null)return true;
+    if(feriaVoz(t)!==null||audioVoz(t))return true;
     return (/^(\S+ ){0,2}(alto|detente)( por favor| ya)?$/.test(t)&&!/\b(mas|muy|en) alto\b/.test(t))||/^(alto|para|parate|detente|stop|frena|quieto|basta|ya|reanuda|reanudar|continua|siguiente|salta\w*|paro)\b/.test(t)||W.paroTotal.test(t)||/\brutina\b/.test(t)||/\b(que puedo decir|ayuda)\b/.test(t)}
   // ── ejecutar las acciones que decidió la IA. Cada una se valida y se recorta a sus topes de seguridad ──
   const num=(v,min,max,def)=>{v=parseFloat(v);return isFinite(v)?Math.min(max,Math.max(min,v)):def};
