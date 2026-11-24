@@ -748,6 +748,7 @@ body[data-mod=asistente] #lbMicFlot{display:none}
    <div class="ia-cons"><span>Constancia</span><i><b id="iaConsB"></b></i><em id="iaCons">—</em></div>
    <details><summary class="lbEstado">Opciones de voz (avanzado)</summary>
     <div class="aFila"><button class="mec" id="lbVozOp">Narración: OFF</button><button class="mec" id="lbOyeOp">«Oye ParaBot»: ON</button></div>
+    <div class="aFila"><button class="mec" id="lbOyeTab">Escuchar con la tablet: OFF</button></div>
     <div class="lbEstado">Narración: el robot cuenta lo que hace. «Oye ParaBot» / «Oye robot»: lo escucha siempre el micrófono de la laptop (sin internet). Di «Oye ParaBot, adelante tres segundos». Funciona con la app abierta en esa laptop o conectada a ella.</div></details>
    <details><summary class="lbEstado">Órdenes por voz (qué puedes decir)</summary>
     <div class="lbEstado" style="line-height:1.6">
@@ -1958,7 +1959,7 @@ const NV=(()=>{
   let tb=0;function burbuja(txt,fuente){const b=$('lbBurbuja');b.textContent=txt;const s=document.createElement('small');s.textContent=fuente;b.appendChild(s);
     b.classList.remove('oculto');clearTimeout(tb);tb=setTimeout(()=>b.classList.add('oculto'),12000)}
   // ---- "Oye ParaBot": escucha continua (solo si lo activas) ----
-  const WAKE=/\b(oye|hey|ey|hola)\s*,?\s*(para\s*bot|parabot|para\s*vot|para\s*vos|para\s*bo|robot)\b/;
+  const WAKE=/(?:^|\b(?:oye|oiga|hey|ey|hola|o|ok|okay|que)\s*,?\s*)(para\s*bots?|parabots?|para\s*vot|para\s*vos|para\s*voz|para\s*bo|para\s*bol[dt]?|para\s*both|para\s*boot|parab[oó])\b|\b(?:oye|oiga|hey|ey|hola)\s*,?\s*robot\b/;
   function oyeIniciar(){
     if(!aSR||!st.oye||st.hablando||A.oyendo||st.srW)return;
     const r=st.srW=new aSR();r.lang='es-PE';r.interimResults=true;r.continuous=false;let txt='';
@@ -1967,7 +1968,7 @@ const NV=(()=>{
     r.onend=()=>{st.srW=null;const t=norm(txt.trim());
       if(t){const m=t.match(WAKE);
         if(m){const resto=txt.trim().slice(t.indexOf(m[0])+m[0].length).replace(/^[\s,.]+/,'');
-          if(resto.split(/\s+/).length>=2){st.despierto=0;$('lbMicFlot').classList.add('oye');aPreguntar(resto);return}
+          if(resto.trim()){st.despierto=0;$('lbMicFlot').classList.add('oye');aPreguntar(resto);return}
           st.despierto=Date.now();$('lbMicFlot').classList.add('oye');decir('Dime.','respuesta');return}
         if(st.despierto&&Date.now()-st.despierto<8000){st.despierto=0;aPreguntar(txt.trim());return}}
       setTimeout(oyeIniciar,250)};
@@ -1981,6 +1982,11 @@ const NV=(()=>{
   $('lbOye').onclick=()=>{if(!aSR){$('lbEstado').textContent='Este navegador no reconoce voz: usa Chrome.';return}
     st.oye=!st.oye;pintar();if(st.oye){decir('Te escucho. Di «Oye ParaBot» y tu pregunta.','respuesta')}else oyePausar()};
   $('lbMicFlot').onclick=()=>{callar();oyePausar();$('lbMicFlot').classList.add('oye');aEscuchar()};
+  // «Escuchar con la tablet»: la propia tablet oye «Oye ParaBot» (respaldo si la laptop no está); se recuerda
+  const pintaTab=()=>{const b=$('lbOyeTab');if(b){b.textContent='Escuchar con la tablet: '+(st.oye?'ON':'OFF');b.classList.toggle('sel',st.oye)}};
+  if($('lbOyeTab'))$('lbOyeTab').onclick=()=>{$('lbOye').click();try{localStorage.setItem('lbOyeTablet',st.oye?'1':'0')}catch(_){}pintaTab()};
+  try{if(localStorage.getItem('lbOyeTablet')==='1'&&aSR){st.oye=true;pintar();setTimeout(oyeIniciar,1500)}}catch(_){}
+  pintaTab();
   // saludo al primer toque (el navegador no deja hablar antes de tocar la pantalla)
   // sin saludo al tocar la pantalla: solo habla cuando se lo piden
   pintar();
