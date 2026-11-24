@@ -2345,6 +2345,14 @@ const CMD=(()=>{
       setRecoger(true);setElevar(true);setDisparo(true)}
   }
   for(const k of [1,2,3]){const b=$('lbFeria'+k);if(b)b.onclick=()=>feria(k)}
+  // la voz: 1 = liebre, 2 = lanzador, 3 = guardián (audio 7); 0 = apagar el módulo; null = no es una orden de la feria
+  // (Vosk y Whisper escriben «módulo» como «modo», «mulo», «múbolo»…: basta con el nombre del módulo)
+  function feriaVoz(t){
+    const mod=/\b(liebre)\b/.test(t)?1:/\blanzador\w*\b/.test(t)?2:/\bguardian\b/.test(t)?3:0;
+    if(!mod||/^(que|como|cual|cuanto|cuando|por que|porque|quien|donde|para que)\b/.test(t))return null;   // una pregunta la responde la IA
+    if(/\b(apaga|apagar|desactiva|desactivar|deten|detener|termina|terminar|quita|cierra)\b/.test(t))return 0;
+    if(/\b(activa|activar|acte|enciende|encender|inicia|iniciar|empieza|comienza|presenta|presentar|pon|muestra|ejecuta|arranca|prende|modo|modulo)\b/.test(t))return mod;
+    return null}
   // tocar PARO en la pantalla también cancela cualquier orden o rutina en curso
   $('paro').addEventListener('click',()=>{VOZ.cancelar=true;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;feriaParar(false)},true);
 
@@ -2353,6 +2361,8 @@ const CMD=(()=>{
     if(/\b(que puedo decir|que ordenes|ayuda|comandos)\b/.test(t)){
       decir('Puedes decir: adelante tres segundos, gira a la derecha noventa grados, más rápido, sube el asta, sigue la línea, enciende el shooter, pon el audio dos, o alto.');return true}
     if(/^(alto|para|parate|detente|deten|frena|cancela|stop)\b.*\brutina\b/.test(t)){alto();return true}   // «para la rutina» nunca la arranca
+    // botones de la FERIA por voz: «activa / presenta / inicia el módulo liebre | lanzador | guardián», «apaga el módulo…»
+    {const f=feriaVoz(t);if(f!==null){if(f===0){if(FERIA.n)await feriaParar(true);decir('Listo.')}else if(FERIA.n!==f)await feria(f);return true}}
     if(/\b(rutina (2|dos)|segunda rutina|boton (2|dos)|regres\w* al inicio|vuelve al inicio)\b/.test(t)){rutina2();return true}
     if(/\brutina\b/.test(t)){rutina();return true}
     const partes=partir(t),acciones=partes.map(interpretar);
@@ -2372,6 +2382,7 @@ const CMD=(()=>{
       r.onend=()=>setTimeout(vuelta,100);try{r.start()}catch(_){}};
     setTimeout(vuelta,800)}
   function urgente(texto){const t=norm(texto);
+    if(feriaVoz(t)!==null)return true;
     return (/^(\S+ ){0,2}(alto|detente)( por favor| ya)?$/.test(t)&&!/\b(mas|muy|en) alto\b/.test(t))||/^(alto|para|parate|detente|stop|frena|quieto|basta|ya|reanuda|reanudar|continua|siguiente|salta\w*|paro)\b/.test(t)||W.paroTotal.test(t)||/\brutina\b/.test(t)||/\b(que puedo decir|ayuda)\b/.test(t)}
   // ── ejecutar las acciones que decidió la IA. Cada una se valida y se recorta a sus topes de seguridad ──
   const num=(v,min,max,def)=>{v=parseFloat(v);return isFinite(v)?Math.min(max,Math.max(min,v)):def};
