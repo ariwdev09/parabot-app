@@ -448,6 +448,9 @@ body[data-mod=asistente] #lbMicFlot{display:none}
 .ia-cons i{height:6px;border-radius:3px;background:#1a2622;overflow:hidden}.ia-cons b{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--asist),var(--acc2));transition:width .6s}
 .ia-cons em{font-style:normal;color:var(--fg)}
 .ia-tele details{font-size:12px}
+#alasPrev{display:block;width:100%;max-width:260px;height:70px;margin:auto}
+#alasPrev path,#alasPrev rect{fill:none;stroke:var(--muted,#888);stroke-width:2}
+#alasPrev.on path{fill:#facc15;stroke:#ca8a04;filter:drop-shadow(0 0 6px #facc15)}
 </style></head><body data-mod="liebre"><div class="app">
 <header>
  <div class="marca">
@@ -791,6 +794,10 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <button data-e="7">Guiño</button><button data-e="8">Mareado</button><button data-e="9">Escaneo</button>
    </div>
   </div>
+  <div class="bloque" style="--c:var(--ojo)">
+   <div class="btit">Alas<small>20 luces · se encienden solas en las rutinas 1 y 2</small><span class="der"><button class="mec" id="bAlas" style="padding:6px 14px">OFF</button></span></div>
+   <div class="vistaprev"><svg id="alasPrev" class="alas" viewBox="0 0 200 50" aria-label="Vista de las alas"><path d="M80 12 L8 4 L8 44 L80 38Z"/><path d="M120 12 L192 4 L192 44 L120 38Z"/><rect x="82" y="8" width="36" height="34" rx="6"/></svg></div>
+  </div>
   <div class="bloque" style="--c:var(--son)">
    <div class="btit">Sonidos<span class="der"><button class="mec" id="bSilencio" style="padding:6px 14px">&#9632; Detener</button></span></div>
    <div class="vistaprev">
@@ -925,6 +932,9 @@ const onoff=(id,on)=>{$(id).textContent=on?'ON':'OFF';$(id).classList.toggle('ac
 function setDisparo(on){disparando=on;onoff('bDisparo',on)}
 function setOjos(on){ojosOn=on;onoff('bOjos',on);pintarOjos()}
 function ojos(){return 'O,'+(ojosOn?1:0)+','+exprSel}
+// Alas de LEDs (decorativas, pin 30 → L293D): Y,1 enciende y Y,0 apaga. Se encienden solas en las rutinas 1 y 2.
+let alasOn=false;
+function setAlas(on){alasOn=on;onoff('bAlas',on);const v=$('alasPrev');if(v)v.classList.toggle('on',on);if(tx)enviar('Y,'+(on?1:0),true)}
 // Inclinación (motor TETRIX con L298N #C): estado que reporta el Mega
 function estadoIncl(){const e=$('iEstado');e.textContent=real.incl>0?'▲ subiendo':real.incl<0?'▼ bajando':'frenado';e.classList.toggle('mov',real.incl!==0)}
 // Mantener presionado: sentido pedido (Lanzador: Subir/Bajar; Pruebas: sus botones)
@@ -1342,6 +1352,7 @@ $('bSilencio').onclick=()=>sonar(0);
 $('vol').oninput=()=>$('volV').textContent=$('vol').value;
 $('vol').onchange=()=>{if(tx)enviar('W,'+$('vol').value,true)};
 $('bOjos').onclick=()=>{if(!tx)return;setOjos(!ojosOn);enviar(ojos(),true)};
+$('bAlas').onclick=()=>{if(!tx)return;setAlas(!alasOn)};
 document.querySelectorAll('#expr button').forEach(b=>b.onclick=()=>{exprSel=+b.dataset.e;
   document.querySelectorAll('#expr button').forEach(x=>x.classList.toggle('sel',x===b));
   if(tx){if(!ojosOn)setOjos(true);enviar(ojos(),true)}pintarOjos()});      // elegir una expresión enciende los ojos
@@ -2301,7 +2312,9 @@ const CMD=(()=>{
     if(!conectado())return decir('El robot no está conectado.');
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     const nivelAntes=(document.querySelector('#vel button.sel')||{dataset:{}}).dataset.v;
-    VOZ.corriendo=true;VOZ.cancelar=false;btn.classList.add('corriendo');nivel(1);decir('Inicio '+nombre+'.');await dormir(900);
+    VOZ.corriendo=true;VOZ.cancelar=false;btn.classList.add('corriendo');nivel(1);
+    const alasAntes=alasOn;setAlas(true);                      // las alas se encienden durante la rutina
+    decir('Inicio '+nombre+'.');await dormir(900);
     const osc=conOsc&&!VOZ.cancelar?oscilar():null;   // asta e inclinación suben y bajan EN PARALELO desde el inicio
     let recolPuesta=false;
     const recol=on=>{if(on&&!tg('lbRecAv')&&!tg('lbElevAv'))return;   // recolección solo mientras AVANZA
@@ -2324,7 +2337,7 @@ const CMD=(()=>{
         else if(inclFinal==='abajo'&&!osc)enviar('H',true);          // botón 2: la inclinación queda ABAJO (vuelve a 0)
       }
       if(!VOZ.cancelar&&!paro)decir('Listo, terminé '+nombre+'.');
-    }finally{if(osc)osc.parar();if(recolPuesta){setRecoger(false);setElevar(false)}VOZ.corriendo=false;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;btn.classList.remove('corriendo');if(est)est.textContent=base;if(nivelAntes)nivel(+nivelAntes)}
+    }finally{if(osc)osc.parar();if(recolPuesta){setRecoger(false);setElevar(false)}if(!alasAntes)setAlas(false);VOZ.corriendo=false;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;btn.classList.remove('corriendo');if(est)est.textContent=base;if(nivelAntes)nivel(+nivelAntes)}
   }
   // ── asta e inclinación EN PARALELO durante toda la rutina (Ariel, 19 de nov. de 2026) ──
   // Sube T s y baja T s (cada uno con sus segundos), una y otra vez, mientras el robot avanza, gira y suenan los audios.
@@ -2452,7 +2465,7 @@ const CMD=(()=>{
     if(/^(que|como|cual|cuanto|cuando|por que|porque|quien|donde)\b/.test(t)&&!/\b(quien eres|como te llamas)\b/.test(t))return 0;
     if(/\b(liebre|lanzador\w*|guardian)\b/.test(t))return 0;          // «presenta el módulo…» es un botón de la feria, no un audio
     if(/\b(despidete|despide|despedida|adios|chau|chao|gracias|agradece|agradecele|agradecer|agradecimiento)\b/.test(t))return 8;
-    if(/\b(saluda|saludes|saludo|saludar|di hola|dile hola|di hola a)\b/.test(t))return /\bjurado\b/.test(t)?1:32;   // 32 = audio 3 y luego el 2
+    if(/\b(saluda|saludes|saludo|saludar|di hola|dile hola|di hola a)\b/.test(t))return /\bjurado\b/.test(t)?1:3;    // guion de la feria: «saluda» y luego «preséntate» (audio 2). 32 = audio 3 y luego el 2
     if(/\b(presentate|presenta te|presenta|presentarte|presentes|quien eres|como te llamas|di tu nombre|di quien eres)\b/.test(t))return 2;
     if(/\b(uno,? dos,? tres|1,? 2,? 3|cuenta hasta tres|a la cuenta de tres|di vamos)\b|^vamos\b/.test(t))return 4;
     return 0}
