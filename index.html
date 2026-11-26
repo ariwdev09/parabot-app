@@ -692,17 +692,17 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="11" y="18" width="18" height="14" rx="2"/><path d="M15 18v-5a5 5 0 0 1 10 0v5"/></svg>
     <span><b id="lbFijoT">Modo feria: OFF</b><small id="lbFijoEst">las ruedas se mueven normal</small></span>
    </button>
-   <button class="ia-rutina" id="lbFeria1" title="Audio 5 y el asta sube una vez (tiempo «Sube» de la rutina). Al detenerlo, el asta baja">
+   <button class="ia-rutina" id="lbFeria1" title="Audio 5 «Módulo liebre activado» y el asta sube y baja una vez (tiempos de la rutina)">
     <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34V8"/><path d="M14 14l6-6 6 6"/><path d="M14 28l6 6 6-6"/></svg>
-    <span><b>Módulo Liebre</b><small id="lbFeria1Est">🔊5 · el asta sube y baja</small></span>
+    <span><b>Módulo Liebre</b><small id="lbFeria1Est">🔊5 «Módulo liebre activado» · asta ▲▼</small></span>
    </button>
-   <button class="ia-rutina" id="lbFeria2" title="Audio 6, sube la inclinación (tiempo de la rutina) y enciende la recolección y el shooter hasta que lo detengas">
+   <button class="ia-rutina" id="lbFeria2" title="Audio 6 «Módulo lanzador adaptativo activado», sube la inclinación (tiempo de la rutina) y enciende la recolección y el shooter hasta que lo detengas">
     <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="13" cy="27" r="6"/><path d="M19 24l14-12"/><path d="M27 12h6v6"/></svg>
     <span><b>Lanzador adaptativo</b><small id="lbFeria2Est">🔊6 · inclinación ▲ · recolección y shooter</small></span>
    </button>
-   <button class="ia-rutina" id="lbFeria3" title="Solo reproduce el audio 7">
+   <button class="ia-rutina" id="lbFeria3" title="Solo reproduce el audio 7 «Módulo guardián activado»">
     <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M8 16h6l8-6v20l-8-6H8z"/><path d="M27 14a8 8 0 0 1 0 12"/></svg>
-    <span><b>Audio 7</b><small id="lbFeria3Est">🔊7</small></span>
+    <span><b>Módulo Guardián</b><small id="lbFeria3Est">🔊7 «Módulo guardián activado»</small></span>
    </button>
    <details class="rut-aj" id="lbRutAj" open><summary>⚙ AJUSTAR LA RUTINA</summary>
     <div class="rut-ayuda">− / + cambian de a 0,01 s o de a 1 %. <b>Mantenlos presionados</b> para ir rápido, o escribe el número. Cada ▶ prueba solo ese paso con el robot.</div>
@@ -798,8 +798,8 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <small id="sNombre">En silencio</small>
    </div>
    <div class="rejilla" id="sonidos">
-    <button data-a="1">Audio 1</button><button data-a="2">Audio 2</button><button data-a="3">Audio 3</button><button data-a="4">Audio 4</button>
-    <button data-a="5">Audio 5</button><button data-a="6">Audio 6</button><button data-a="7">Audio 7</button><button data-a="8">Audio 8</button>
+    <button data-a="1" title="Hola, estimado jurado">1 · Hola, jurado</button><button data-a="2" title="Soy ParaBot">2 · Soy ParaBot</button><button data-a="3" title="Hola, público presente">3 · Hola, público</button><button data-a="4" title="1, 2, 3, ¡vamos!">4 · 1, 2, 3, ¡vamos!</button>
+    <button data-a="5" title="Módulo liebre activado">5 · Liebre</button><button data-a="6" title="Módulo lanzador adaptativo activado">6 · Lanzador</button><button data-a="7" title="Módulo guardián activado">7 · Guardián</button><button data-a="8" title="Gracias, Samsung Solve for Tomorrow">8 · Gracias, Samsung</button>
    </div>
    <label class="vol" for="vol">Volumen <input id="vol" type="range" min="0" max="30" step="1" value="20"><b id="volV">20</b></label>
   </div>
@@ -2446,7 +2446,7 @@ const CMD=(()=>{
     if(modoFijo){VOZ.hasta=0;if(siguiendo)setLinea(false);if(VOZ.corriendo)alto()}pintarFijo()};
   pintarFijo();
   // audios del robot: 1 «Hola, estimado jurado» · 2 «Soy ParaBot» · 3 «Hola, público presente» · 4 «1, 2, 3, ¡vamos!»
-  //                   5 «Módulo liebre» · 6 «Módulo lanzador adaptativo» · 7 «Módulo guardián» · 8 «Gracias»
+  //                   5 «Módulo liebre activado» · 6 «Módulo lanzador adaptativo activado» · 7 «Módulo guardián activado» · 8 «Gracias, Samsung Solve for Tomorrow»
   const SEG_SALUDO=2.4;   // segundos que dura el audio 3 antes de que suene el 2 (ajústalo si se corta o queda un silencio)
   function audioVoz(t){
     if(/^(que|como|cual|cuanto|cuando|por que|porque|quien|donde)\b/.test(t)&&!/\b(quien eres|como te llamas)\b/.test(t))return 0;
