@@ -688,9 +688,13 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <span><b>2 · Regreso al inicio</b><small id="lbRutina2Est">🔊8 · ↺90° · regresa</small></span>
    </button>
    <div class="rut-sec" style="margin:6px 0 2px">FERIA · toca otra vez para detener</div>
+   <button class="ia-rutina" id="lbFijo" title="Modo feria: las ruedas no se mueven por nada (voz, IA, rutinas, joystick ni línea). El asta, el lanzador, los ojos y los audios siguen funcionando">
+    <svg viewBox="0 0 40 40" aria-hidden="true"><rect x="11" y="18" width="18" height="14" rx="2"/><path d="M15 18v-5a5 5 0 0 1 10 0v5"/></svg>
+    <span><b id="lbFijoT">Modo feria: OFF</b><small id="lbFijoEst">las ruedas se mueven normal</small></span>
+   </button>
    <button class="ia-rutina" id="lbFeria1" title="Audio 5 y el asta sube una vez (tiempo «Sube» de la rutina). Al detenerlo, el asta baja">
     <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M20 34V8"/><path d="M14 14l6-6 6 6"/><path d="M14 28l6 6 6-6"/></svg>
-    <span><b>Módulo Liebre</b><small id="lbFeria1Est">🔊5 · el asta sube</small></span>
+    <span><b>Módulo Liebre</b><small id="lbFeria1Est">🔊5 · el asta sube y baja</small></span>
    </button>
    <button class="ia-rutina" id="lbFeria2" title="Audio 6, sube la inclinación (tiempo de la rutina) y enciende la recolección y el shooter hasta que lo detengas">
     <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="13" cy="27" r="6"/><path d="M19 24l14-12"/><path d="M27 12h6v6"/></svg>
@@ -952,7 +956,14 @@ function astaDir(){
 function mec(){return 'K,'+((recogiendo||prueba('pRec'))?1:0)+','+astaDir()+','+((elevando||prueba('pElev'))?1:0)}
 function gauge(id,v){const g=$(id);g.style.setProperty('--p',Math.min(Math.abs(v),100));
   g.querySelector('b').textContent=(id==='gAsta'&&v?(v>0?'▲':'▼'):'')+Math.abs(v)+'%'}
-function setLinea(on){const antes=siguiendo;siguiendo=on;tLinea=Date.now();
+// MODO FERIA (Ariel, 25 de nov. de 2026): con ON las ruedas nunca se mueven; todo lo demás funciona
+let modoFijo=false;try{modoFijo=localStorage.getItem('modoFeria')==='1'}catch(_){}
+const FIJO_FRASE='En esta demostración permanezco fijo para mostrar mis mecanismos de interacción.';
+function pintarFijo(){const b=document.getElementById('lbFijo');if(!b)return;b.classList.toggle('corriendo',modoFijo);
+  document.getElementById('lbFijoT').textContent='Modo feria: '+(modoFijo?'ON':'OFF');
+  document.getElementById('lbFijoEst').textContent=modoFijo?'🔒 ruedas bloqueadas · asta, lanzador y audios sí':'las ruedas se mueven normal'}
+function setLinea(on){if(on&&modoFijo){if(typeof NV!=='undefined')NV.decir(FIJO_FRASE,'respuesta');return}
+  const antes=siguiendo;siguiendo=on;tLinea=Date.now();
   $('bLinea').innerHTML=on?'&#9632; Detener':'&#9654; Seguir línea';$('bLinea').classList.toggle('on',on);$('scan').classList.toggle('on',on);
   if(!on)$('estLinea').textContent='Listo';
   if(on&&!antes&&$('dAuto').checked&&!midiendo)medirIniciar('Línea');          // la medición empieza sola
@@ -1120,6 +1131,12 @@ const PALETA=(()=>{
     $('pUm').textContent=st.umbrales?'Umbral '+st.umbrales.join(' / '):'Umbral —';
     const e=$('pEst');e.textContent=st.conectada?'conectada':'sin conectar';e.classList.toggle('on',st.conectada);
     $('pCon').textContent=st.conectada?'Desconectar':'Conectar'};
+  const BLOQUEO_APP=400;   // ms: lo mismo que el bloqueo de la paleta v2
+  const U=['','un','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','once','doce','trece','catorce','quince','dieciséis','diecisiete','dieciocho','diecinueve','veinte',
+    'veintiún','veintidós','veintitrés','veinticuatro','veinticinco','veintiséis','veintisiete','veintiocho','veintinueve'];
+  const D=['','','','treinta','cuarenta','cincuenta','sesenta','setenta','ochenta','noventa'];
+  function enPuntos(n){let p=n<30?U[n]:n<100?D[Math.floor(n/10)]+(n%10?' y '+(n%10===1?'un':U[n%10]):''):String(n);
+    return p.charAt(0).toUpperCase()+p.slice(1)+(n===1?' punto':' puntos')}
   let ctxA=null;
   function tono(){try{ctxA=ctxA||new (window.AudioContext||window.webkitAudioContext)();const o=ctxA.createOscillator(),g=ctxA.createGain();
     o.frequency.value=880;g.gain.setValueAtTime(.12,ctxA.currentTime);g.gain.exponentialRampToValueAtTime(.001,ctxA.currentTime+.18);
@@ -1127,10 +1144,12 @@ const PALETA=(()=>{
   function golpe(z,fuerza){
     if(!(z>=0&&z<NZ))return;
     const ahora=Date.now(),u=st.hist[st.hist.length-1];
+    if(ahora-(st.tUlt||0)<BLOQUEO_APP)return;                 // un golpe = un punto, aunque la paleta mande dos avisos (dos discos)
+    st.tUlt=ahora;
     if(!st.ses||(u&&ahora-u.t>300000)||(u&&u.s===st.ses&&u.n!==jugador()))nuevaSesion();   // 5 min sin golpes o cambió el jugador: sesión nueva
     st.hist.push({t:ahora,z,f:fuerza==null?null:fuerza,s:st.ses,n:jugador()});guardarH();
     st.total++;st.z[z]++;st.ultimo={zona:NOM[z],fuerza,hora:ahora};pinta();tono();
-    try{if(typeof NV!=='undefined')NV.decir('¡Punto!','respuesta')}catch(_){}   // el «oficial»: cada acierto se anuncia
+    try{if(typeof NV!=='undefined')NV.decir(enPuntos(st.total),'respuesta')}catch(_){}   // «Un punto», «Dos puntos»…: cada acierto se anuncia
     if(typeof PALDATOS!=='undefined')PALDATOS.siVisible();
     const el=$('pZ'+(z+1)),t=$('pTotal');el.classList.add('golpe');t.classList.add('golpe');
     setTimeout(()=>{el.classList.remove('golpe');t.classList.remove('golpe')},350);
@@ -1642,7 +1661,7 @@ setInterval(()=>{
   if(modulo==='pruebas'){
     const v=[0,1,2,3].map(i=>(held['t'+i+'f']?1:0)-(held['t'+i+'b']?1:0));
     enviar('T,'+v.join(','));return}
-  if(siguiendo){enviar('L,1');return}                      // siguiendo la línea: el Mega maneja solo
+  if(siguiendo&&!modoFijo){enviar('L,1');return}           // siguiendo la línea: el Mega maneja solo
   let x=0,y=0,r=0;
   if(modulo==='liebre'||modulo==='lanzador'){
     if(cond==='J'){x=ex(dz(L.x));y=ex(dz(L.y));r=ex(dz(R.x))}
@@ -1650,6 +1669,7 @@ setInterval(()=>{
   const kx=K('d','arrowright')-K('a','arrowleft'),ky=K('w','arrowup')-K('s','arrowdown'),kr=K('e')-K('q');
   if(kx||ky||kr){x=kx;y=ky;r=kr}
   if(typeof CMD!=='undefined'&&Date.now()<CMD.VOZ.hasta){x=CMD.VOZ.x;y=CMD.VOZ.y;r=CMD.VOZ.r}   // orden por voz
+  if(modoFijo){x=0;y=0;r=0}                                 // modo feria: las ruedas nunca se mueven
   enviar('D,'+[x,y,r].map(q=>Math.round(q*100)).join(','));
 },50);
 
@@ -2277,6 +2297,7 @@ const CMD=(()=>{
   async function correrRutina(PASOS,idBtn,idEst,conOsc,etq,nombre,inclFinal){
     const est=$(idEst),btn=$(idBtn),base=etq();
     if(VOZ.corriendo){alto();return}                         // tocarla otra vez la detiene
+    if(modoFijo)return decir(FIJO_FRASE+' Apaga el modo feria para hacer la rutina.');
     if(!conectado())return decir('El robot no está conectado.');
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     const nivelAntes=(document.querySelector('#vel button.sel')||{dataset:{}}).dataset.v;
@@ -2372,6 +2393,7 @@ const CMD=(()=>{
   // «Probar avance» / «Probar giro 90°»: un solo tramo con los valores del panel, para calibrar
   async function probar(giro){
     if(VOZ.corriendo){alto();return}
+    if(modoFijo)return decir(FIJO_FRASE);
     if(!conectado())return decir('El robot no está conectado.');
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     const nivelAntes=(document.querySelector('#vel button.sel')||{dataset:{}}).dataset.v;
@@ -2391,7 +2413,9 @@ const CMD=(()=>{
   const feriaMarca=()=>{for(const k of [1,2,3]){const b=$('lbFeria'+k);if(b)b.classList.toggle('corriendo',FERIA.n===k)}};
   async function feriaParar(ordenado){        // ordenado=true: deja todo abajo; con «alto» o PARO solo se detiene
     const n=FERIA.n,osc=FERIA.osc;FERIA.n=0;FERIA.osc=null;feriaMarca();
-    if(n===1){const subio=Math.min(Date.now()-(FERIA.t0||0),FERIA.ms||0);VOZ.astaHasta=0;
+    if(n===1&&FERIA.fase==='baja'){FERIA.fase='';                 // ya estaba bajando: termina de bajar (o se queda si fue «alto»/PARO)
+      if(ordenado&&!paro&&conectado()){const r=VOZ.astaHasta-Date.now();if(r>0)await new Promise(z=>setTimeout(z,r))}VOZ.astaHasta=0}
+    else if(n===1){FERIA.fase='';const subio=Math.min(Date.now()-(FERIA.t0||0),FERIA.ms||0);VOZ.astaHasta=0;
       if(ordenado&&!paro&&conectado()&&subio>50){const baja=subio/((FERIA.ms||1))*segAstaBaja()*1000;   // baja lo que subió
         Object.assign(VOZ,{asta:-1,astaHasta:Date.now()+baja});await dormir(baja);VOZ.astaHasta=0}}
     if(n===2){VOZ.inclHasta=0;if(conectado()){if(recogiendo)setRecoger(false);if(elevando)setElevar(false);if(disparando)setDisparo(false);
@@ -2406,19 +2430,30 @@ const CMD=(()=>{
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     if(VOZ.corriendo){alto();await dormir(400)}       // si corría una rutina, primero la detiene
     VOZ.cancelar=false;FERIA.n=n;feriaMarca();
-    if(n===1){sonar(5);const ms=segAstaSube()*1000;FERIA.t0=Date.now();FERIA.ms=ms;Object.assign(VOZ,{asta:1,astaHasta:Date.now()+ms})}
+    if(n===1){sonar(5);const ms=segAstaSube()*1000,id=FERIA.id=(FERIA.id||0)+1;FERIA.t0=Date.now();FERIA.ms=ms;FERIA.fase='sube';
+      Object.assign(VOZ,{asta:1,astaHasta:Date.now()+ms});
+      (async()=>{const z=t=>new Promise(r=>setTimeout(r,t));         // el asta sube y luego baja sola (una vez)
+        await z(ms);if(FERIA.n!==1||FERIA.id!==id)return;
+        const mb=segAstaBaja()*1000;FERIA.fase='baja';Object.assign(VOZ,{asta:-1,astaHasta:Date.now()+mb});
+        await z(mb);if(FERIA.n!==1||FERIA.id!==id)return;
+        VOZ.astaHasta=0;FERIA.fase='';FERIA.n=0;feriaMarca()})()}
     else{sonar(6);
       const ms=segInclSube()*1000;Object.assign(VOZ,{incl:1,inclHasta:Date.now()+ms});
       setRecoger(true);setElevar(true);setDisparo(true)}
   }
   for(const k of [1,2,3]){const b=$('lbFeria'+k);if(b)b.onclick=()=>feria(k)}
+  if($('lbFijo'))$('lbFijo').onclick=()=>{modoFijo=!modoFijo;try{localStorage.setItem('modoFeria',modoFijo?'1':'0')}catch(_){}
+    if(modoFijo){VOZ.hasta=0;if(siguiendo)setLinea(false);if(VOZ.corriendo)alto()}pintarFijo()};
+  pintarFijo();
   // audios del robot: 1 «Hola, estimado jurado» · 2 «Soy ParaBot» · 3 «Hola, público presente» · 4 «1, 2, 3, ¡vamos!»
   //                   5 «Módulo liebre» · 6 «Módulo lanzador adaptativo» · 7 «Módulo guardián» · 8 «Gracias»
+  const SEG_SALUDO=2.4;   // segundos que dura el audio 3 antes de que suene el 2 (ajústalo si se corta o queda un silencio)
   function audioVoz(t){
     if(/^(que|como|cual|cuanto|cuando|por que|porque|quien|donde)\b/.test(t)&&!/\b(quien eres|como te llamas)\b/.test(t))return 0;
-    if(/\b(despidete|despide|despedida|adios|chau|chao|gracias|agradece)\b/.test(t))return 8;
-    if(/\b(saluda|saludes|saludo|saludar|di hola|dile hola|di hola a)\b/.test(t))return /\bjurado\b/.test(t)?1:3;
-    if(/\b(presentate|presenta te|presentarte|quien eres|como te llamas|di tu nombre|di quien eres)\b/.test(t))return 2;
+    if(/\b(liebre|lanzador\w*|guardian)\b/.test(t))return 0;          // «presenta el módulo…» es un botón de la feria, no un audio
+    if(/\b(despidete|despide|despedida|adios|chau|chao|gracias|agradece|agradecele|agradecer|agradecimiento)\b/.test(t))return 8;
+    if(/\b(saluda|saludes|saludo|saludar|di hola|dile hola|di hola a)\b/.test(t))return /\bjurado\b/.test(t)?1:32;   // 32 = audio 3 y luego el 2
+    if(/\b(presentate|presenta te|presenta|presentarte|presentes|quien eres|como te llamas|di tu nombre|di quien eres)\b/.test(t))return 2;
     if(/\b(uno,? dos,? tres|1,? 2,? 3|cuenta hasta tres|a la cuenta de tres|di vamos)\b|^vamos\b/.test(t))return 4;
     return 0}
   function ojosFeliz(){try{if(!ojosOn)$('bOjos').click();const b=document.querySelector('#expr button[data-e="1"]');if(b)b.click()}catch(_){}}
@@ -2428,7 +2463,7 @@ const CMD=(()=>{
     const mod=/\b(liebre)\b/.test(t)?1:/\blanzador\w*\b/.test(t)?2:/\bguardian\b/.test(t)?3:0;
     if(!mod||/^(que|como|cual|cuanto|cuando|por que|porque|quien|donde|para que)\b/.test(t))return null;   // una pregunta la responde la IA
     if(/\b(apaga|apagar|desactiva|desactivar|deten|detener|termina|terminar|quita|cierra)\b/.test(t))return 0;
-    if(/\b(activa|activar|acte|enciende|encender|inicia|iniciar|empieza|comienza|presenta|presentar|pon|muestra|ejecuta|arranca|prende|modo|modulo)\b/.test(t))return mod;
+    if(/\b(activa|activar|activame|acte|enciende|encender|inicia|iniciar|empieza|comienza|presenta|presentar|pon|ponme|muestra|muestranos|ensena|ejecuta|ejecutar|arranca|prende|reproduce|reproducir|reproduzca|haz|hace|has|hazme|realiza|corre|lanza|demuestra|usa|prueba|abre|modo|modulo|mulo)\b/.test(t))return mod;
     return null}
   // tocar PARO en la pantalla también cancela cualquier orden o rutina en curso
   $('paro').addEventListener('click',()=>{VOZ.cancelar=true;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;feriaParar(false)},true);
@@ -2439,11 +2474,15 @@ const CMD=(()=>{
       decir('Puedes decir: adelante tres segundos, gira a la derecha noventa grados, más rápido, sube el asta, sigue la línea, enciende el shooter, pon el audio dos, o alto.');return true}
     if(/^(alto|para|parate|detente|deten|frena|cancela|stop)\b.*\brutina\b/.test(t)){alto();return true}   // «para la rutina» nunca la arranca
     // audios de la feria por voz (Ariel, 25 de nov. de 2026): suena el audio en el robot y los ojos se ponen felices
-    {const n=audioVoz(t);if(n){if(conectado()){sonar(n);ojosFeliz()}else decir('El robot no está conectado.');return true}}
+    {const n=audioVoz(t);if(n){if(!conectado())decir('El robot no está conectado.');
+      else if(n===32){sonar(3);ojosFeliz();const id=VOZ.saludo=(VOZ.saludo||0)+1;   // «Hola, público presente» + «Soy ParaBot»
+        setTimeout(()=>{if(VOZ.saludo===id&&!paro&&conectado())sonar(2)},SEG_SALUDO*1000)}
+      else{sonar(n);ojosFeliz()}return true}}
     // botones de la FERIA por voz: «activa / presenta / inicia el módulo liebre | lanzador | guardián», «apaga el módulo…»
     {const f=feriaVoz(t);if(f!==null){if(f===0){if(FERIA.n)await feriaParar(true);decir('Listo.')}else if(FERIA.n!==f)await feria(f);return true}}
     if(/\b(rutina (2|dos)|segunda rutina|boton (2|dos)|regres\w* al inicio|vuelve al inicio)\b/.test(t)){rutina2();return true}
     if(/\brutina\b/.test(t)){rutina();return true}
+    if(modoFijo&&/\b(adelante|atras|avanza\w*|retrocede\w*|gira\w*|voltea\w*|dobla\w*|camina\w*|anda|muevete|mueve\w*|desplaza\w*|sigue la linea|vuelta)\b/.test(t)){decir(FIJO_FRASE);return true}
     const partes=partir(t),acciones=partes.map(interpretar);
     if(!acciones.length||acciones.some(a=>!a))return false;   // no es (solo) una orden: que responda la IA
     if(VOZ.corriendo&&!(acciones.length===1&&[alto,paroTotal,saltar].includes(acciones[0].f))){decir('Termino la orden anterior primero. Di «alto» para cancelar.');return true}
@@ -2467,6 +2506,9 @@ const CMD=(()=>{
   const num=(v,min,max,def)=>{v=parseFloat(v);return isFinite(v)?Math.min(max,Math.max(min,v)):def};
   const EXPR_NOMBRE=n=>NOMBRES.findIndex(x=>norm(x).slice(0,4)===norm(String(n||'')).slice(0,4));
   async function ejecutar(acciones,frase){
+    if(modoFijo&&acciones.some(a=>['mover','girar','rutina','linea'].includes(a.tipo)&&a.encender!==false)){   // modo feria
+      acciones=acciones.filter(a=>!['mover','girar','rutina','linea'].includes(a.tipo));
+      if(!acciones.length){decir(FIJO_FRASE);return}frase=(frase?frase+' ':'')+'Las ruedas están bloqueadas en esta demostración.'}
     const mueve=acciones.some(a=>['mover','girar','asta','rutina'].includes(a.tipo));
     if(mueve&&!conectado()){decir('El robot no está conectado.');return}
     if(mueve&&paro&&!acciones.some(a=>a.tipo==='reanudar')){decir('El paro está activo. Di «reanuda» primero.');return}
