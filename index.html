@@ -779,7 +779,8 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <div class="lbEstado">Calíbralo: di «gira a la derecha 90 grados» y ajusta hasta que gire justo un cuarto de vuelta (sin sensor, el giro es por tiempo).</div></details>
    <details><summary class="lbEstado">Servidores del coach (laptops)</summary>
     <div class="aFila"><input id="lbServidores" placeholder="https://laptop.ts.net, https://respaldo.ts.net"><button class="mec" id="lbServGuardar">Guardar</button></div>
-    <div class="lbEstado" id="lbServEstado">…</div></details>
+    <div class="aFila"><button class="mec" id="lbServProbar">Probar conexión con la laptop</button></div>
+    <div class="lbEstado" id="lbServEstado" style="white-space:pre-line">…</div></details>
    <div class="lbEstado" id="lbEstado">Di «Oye ParaBot» o toca el núcleo. Pregunta por tus recorridos o da una orden.</div>
   </div>
  </section>
@@ -1829,6 +1830,9 @@ function aReglas(q){
   if(/acierto|paleta|golpe|zona/.test(t)&&typeof PALDATOS!=='undefined'){const p=PALDATOS.resumenIA();
     if(!p.sesiones)return 'Todavía no tengo golpes de la paleta. Conéctala en el Lanzador y golpea.';const u=p.ultima_sesion;
     return 'En la última sesión hiciste '+u.aciertos+' aciertos: '+Object.entries(u.por_fila).map(([k,v])=>v+' en la '+k.replace('_',' ')).join(', ')+'. Golpeas más en la '+p.fila_mas_usada+'.'}
+  // una pregunta que no es de sus datos (fútbol, el clima, quién eres…) no se contesta con datos: la responde la IA
+  if(!/recorri|marca|record|tiempo|velocidad|rapido|mejorando|progreso|avanzo|tendencia|voy|constan|regular|parejo|cuant|veces|recomien|consejo|que hago|siguiente|proxim|promedio|duele|dolor|mareo|lesion|como me fue|ultimo|hoy|corr/.test(t))
+    return 'Sin conexión solo puedo contarte tus datos. Pregúntame cómo te fue, tu mejor marca, si estás mejorando o qué te recomiendo.';
   if(!d.recorridos)return 'Todavía no tengo recorridos tuyos. Corre una vez con «Seguir línea» y te cuento cómo te fue.';
   const u=d.ultimo,mj=d.mejor_marca;
   if(/mejor marca|record|mas rapido|mejor tiempo/.test(t))return 'Tu mejor marca es '+aDi(mj.velocidad_ms,2)+' metros por segundo: '+aDi(mj.distancia_m)+' metros en '+aDi(mj.tiempo_s)+' segundos.';
@@ -1869,7 +1873,10 @@ async function aPreguntar(q){
   if(anulada())return;
   if(!resp){   // sin IA: el intérprete simple de órdenes; si tampoco es orden, las reglas de preguntas
     if(typeof CMD!=='undefined'&&await CMD.intentar(q)){aBoton('','Toca y habla');return}
-    resp=mod==='lanzador'?NV.reglasLanz(q):(NV.reglasComunes(q)||aReglas(q));fuente='sin conexión: reglas'}
+    resp=mod==='lanzador'?NV.reglasLanz(q):(NV.reglasComunes(q)||aReglas(q));fuente='sin conexión: reglas';
+    if(/^Sin conexión solo puedo/.test(resp)){   // una pregunta general (por ejemplo, de fútbol) necesita la IA de la laptop
+      resp='Esa pregunta la responde la inteligencia artificial de la laptop, y ahora no llego a ella. Sin ella puedo cumplir órdenes y contarte tus datos.';
+      const m=CO.motivo();if(m)$('lbEstado').textContent='Sin IA: '+m+'.'}}
   ms=Math.round(performance.now()-t0);A.hist.push({q,a:resp});A.ultima=resp;
   aMsg(resp,'el',fuente+' · '+(ms/1000).toFixed(1)+' s');$('lbFuente').textContent=fuente;
   if(mod!=='asistente')NV.burbuja(resp,fuente);
@@ -1978,16 +1985,26 @@ const CO=(()=>{
     if(location.pathname.startsWith('/parabot')&&!urls.includes(location.origin))urls.unshift(location.origin);
     lista=urls.map((u,i)=>({url:u,nombre:u===location.origin?'esta laptop':i===0?'laptop principal':'respaldo '+i,vivo:false}));
     $('lbServidores').value=txt||DEF}
+  // por qué no llega (Ariel, 26 de nov.): rápido = la tablet no encuentra la dirección (DNS de Tailscale) o la bloquea;
+  // lento = la laptop no contesta (apagada, Nadir cerrado o Tailscale desconectado)
   async function sondear(){revisado=Date.now();
-    await Promise.all(lista.map(async c=>{try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),3500);
-      const r=await fetch(c.url+'/api/parabot/estado',{signal:ctl.signal});clearTimeout(to);c.vivo=r.ok}catch(_){c.vivo=false}}));
+    await Promise.all(lista.map(async c=>{const t0=performance.now();try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),6000);
+      const r=await fetch(c.url+'/api/parabot/estado',{signal:ctl.signal,cache:'no-store'});clearTimeout(to);c.vivo=r.ok;c.motivo=r.ok?'':'la laptop respondió con error '+r.status}
+      catch(e){c.vivo=false;const ms=performance.now()-t0;
+        c.motivo=e.name==='AbortError'?'la laptop no contesta (¿apagada, Nadir cerrado o Tailscale desconectado en la laptop?)'
+          :ms<1500?'la tablet no encuentra la laptop: abre Tailscale en la tablet (Conectado y «Usar DNS de Tailscale» activado) y en Chrome apaga Configuración → Privacidad → «Usar DNS seguro»'
+          :'no hay conexión con la laptop (revisa Tailscale en los dos)'}}));
     const v=lista.filter(c=>c.vivo);$('lbFuente').textContent=v.length?'Claude: '+v.map(c=>c.nombre).join(' → '):'sin laptop: reglas';
-    $('lbServEstado').textContent=lista.map(c=>(c.vivo?'● ':'○ ')+c.nombre).join('   ')}
+    $('lbServEstado').textContent=lista.map(c=>(c.vivo?'● ':'○ ')+c.nombre+(c.vivo?'':' — '+(c.motivo||'sin probar'))).join('\n')}
+  const motivo=()=>{const c=lista.find(c=>!c.vivo&&c.motivo);return c?c.motivo:''};
   function guardar(){try{localStorage.setItem('lbServidores',$('lbServidores').value.trim())}catch(_){}cargar();sondear()}
-  return {cargar,sondear,guardar,vivos:()=>lista.filter(c=>c.vivo),get revisado(){return revisado}};
+  return {cargar,sondear,guardar,motivo,vivos:()=>lista.filter(c=>c.vivo),get revisado(){return revisado}};
 })();
 CO.cargar();CO.sondear();setInterval(()=>CO.sondear(),30000);
 $('lbServGuardar').onclick=CO.guardar;
+$('lbServProbar').onclick=async()=>{$('lbServEstado').textContent='Probando…';await CO.sondear();
+  const v=CO.vivos();const t=v.length?'Conectado ('+v[0].nombre+'): la IA responde.':'No llego a la laptop: '+CO.motivo()+'.';
+  $('lbEstado').textContent=t;NV.decir(v.length?'Conectado a la laptop. La IA responde.':'No llego a la laptop.','respuesta')};
 aCorredores();
 
 // ================= VOZ DEL ROBOT: narración, presentación de módulos, preguntas por módulo y "Oye ParaBot" =================
