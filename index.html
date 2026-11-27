@@ -779,7 +779,7 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <div class="lbEstado">Calíbralo: di «gira a la derecha 90 grados» y ajusta hasta que gire justo un cuarto de vuelta (sin sensor, el giro es por tiempo).</div></details>
    <details><summary class="lbEstado">Servidores del coach (laptops)</summary>
     <div class="aFila"><input id="lbServidores" placeholder="https://laptop.ts.net, https://respaldo.ts.net"><button class="mec" id="lbServGuardar">Guardar</button></div>
-    <div class="aFila"><button class="mec" id="lbServProbar">Probar conexión con la laptop</button></div>
+    <div class="aFila"><button class="mec" id="lbServProbar">Probar conexión con la laptop</button><button class="mec" id="lbServAbrir" title="Abre esta misma app servida por la laptop: así Chrome no bloquea la conexión">Abrir la app desde la laptop</button></div>
     <div class="lbEstado" id="lbServEstado" style="white-space:pre-line">…</div></details>
    <div class="lbEstado" id="lbEstado">Di «Oye ParaBot» o toca el núcleo. Pregunta por tus recorridos o da una orden.</div>
   </div>
@@ -1992,7 +1992,7 @@ const CO=(()=>{
       const r=await fetch(c.url+'/api/parabot/estado',{signal:ctl.signal,cache:'no-store'});clearTimeout(to);c.vivo=r.ok;c.motivo=r.ok?'':'la laptop respondió con error '+r.status}
       catch(e){c.vivo=false;const ms=performance.now()-t0;
         c.motivo=e.name==='AbortError'?'la laptop no contesta (¿apagada, Nadir cerrado o Tailscale desconectado en la laptop?)'
-          :ms<1500?'la tablet no encuentra la laptop: abre Tailscale en la tablet (Conectado y «Usar DNS de Tailscale» activado) y en Chrome apaga Configuración → Privacidad → «Usar DNS seguro»'
+          :ms<1500?'Chrome bloquea la conexión. Prueba en este orden: 1) toca el candado de la barra → Configuración del sitio → «Acceso a la red local» (o «dispositivos de tu red») → Permitir, y recarga. 2) Si sigue, toca «Abrir la app desde la laptop». 3) En Tailscale de la tablet, «Usar DNS de Tailscale» activado y en Chrome «Usar DNS seguro» apagado'
           :'no hay conexión con la laptop (revisa Tailscale en los dos)'}}));
     const v=lista.filter(c=>c.vivo);$('lbFuente').textContent=v.length?'Claude: '+v.map(c=>c.nombre).join(' → '):'sin laptop: reglas';
     $('lbServEstado').textContent=lista.map(c=>(c.vivo?'● ':'○ ')+c.nombre+(c.vivo?'':' — '+(c.motivo||'sin probar'))).join('\n')}
@@ -2002,6 +2002,7 @@ const CO=(()=>{
 })();
 CO.cargar();CO.sondear();setInterval(()=>CO.sondear(),30000);
 $('lbServGuardar').onclick=CO.guardar;
+$('lbServAbrir').onclick=()=>{const u=($('lbServidores').value||'https://desktop-gjr5vm6.tail47ee00.ts.net').split(/[\s,]+/).find(x=>/^https:\/\//.test(x));if(u)location.href=u.replace(/\/+$/,'')+'/parabot/'};
 $('lbServProbar').onclick=async()=>{$('lbServEstado').textContent='Probando…';await CO.sondear();
   const v=CO.vivos();const t=v.length?'Conectado ('+v[0].nombre+'): la IA responde.':'No llego a la laptop: '+CO.motivo()+'.';
   $('lbEstado').textContent=t;NV.decir(v.length?'Conectado a la laptop. La IA responde.':'No llego a la laptop.','respuesta')};
@@ -2099,6 +2100,7 @@ const NV=(()=>{
       else if(e.error==='network'){st.sinRed=Date.now();$('lbEstado').textContent='La tablet necesita internet para entender la voz. Mientras tanto, usa los botones.'}};
     r.onend=()=>{st.srW=null;const t=norm(txt.trim());
       // si la laptop ya escucha «Oye ParaBot», la tablet no ejecuta lo mismo dos veces
+      // si la laptop ya escucha «Oye ParaBot», la tablet no ejecuta lo mismo dos veces
       let lap=false;try{lap=localStorage.getItem('lbOyeLaptop')!=='0'&&typeof CO!=='undefined'&&!!CO.vivos()[0]}catch(_){}
       if(lap){setTimeout(oyeIniciar,250);return}
       if(t){const m=t.match(WAKE);
@@ -2152,6 +2154,7 @@ const CMD=(()=>{
     if(!m)return null;let v=/\d/.test(m[1])?parseFloat(m[1].replace(',','.')):NUM[m[1]];
     if(/y medio/.test(m[0])||t.slice(t.indexOf(m[0])+m[0].length).match(/^\w*\s+y medio\b/))v+=0.5;return v}   // «3 y medio segundos» o «1 segundo y medio»
   const conectado=()=>!!tx;
+  const SIN_ROBOT='El robot no está conectado a esta tablet. Toca Conectar arriba y elige el robot. La inteligencia artificial no hace falta para las órdenes.';
   const dormir=ms=>new Promise(r=>{const t0=Date.now();const iv=setInterval(()=>{if(VOZ.cancelar||VOZ.saltar||Date.now()-t0>=ms){clearInterval(iv);r()}},50)});
   const decir=t=>NV.decir(t,'respuesta');
   const fmtS=s=>{s=Math.round(s*10)/10;if(s===0.5)return 'medio segundo';const e=Math.floor(s),d=s-e;
@@ -2166,7 +2169,7 @@ const CMD=(()=>{
   function saltar(){if(VOZ.corriendo){VOZ.saltar=true;VOZ.hasta=0;VOZ.astaHasta=0;decir('Siguiente.')}else decir('No hay ninguna orden en curso.')}
   // ── movimiento ──
   async function mover(x,y,r,seg,txt,fija){
-    if(!conectado())return decir('El robot no está conectado.');
+    if(!conectado())return decir(SIN_ROBOT);
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     if(siguiendo)$('bLinea').click();
     seg=fija?Math.max(0,seg):Math.min(MAX_S,Math.max(0.3,seg));if(fija&&seg<=0)return;   // rutina: el tiempo tal cual; voz: topes
@@ -2206,7 +2209,7 @@ const CMD=(()=>{
   const EXPR=[['normal',/\b(normal|neutral|serio)\b/],['feliz',/\b(feliz|contento|alegre|sonri\w*|felices)\b/],['enojado',/\b(enojad\w*|molest\w*|brav\w*|furios\w*|enfadad\w*|amarg\w*)\b/],
     ['triste',/\b(triste\w*|apenad\w*|llor\w*)\b/],['sorpresa',/\b(sorpres\w*|sorprendid\w*|asombrad\w*)\b/],['sueño',/\b(sueno|suen\w*|dormid\w*|cansad\w*|dormilon)\b/],
     ['corazones',/\b(corazon\w*|enamorad\w*|amor)\b/],['guiño',/\b(guin\w*|guino)\b/],['mareado',/\b(marea\w*|confundid\w*)\b/],['escaneo',/\b(escane\w*|radar|busca\w*)\b/]];
-  const sinRobot=()=>decir('El robot no está conectado.');
+  const sinRobot=()=>decir(SIN_ROBOT);
   // duración: "3 segundos", "un poco" (1 s), "un rato" (3 s)
   const durac=(t,def)=>numero(t,'seg')??(/\b(un poco|un poquito|poquito|un toque|un momento|un ratito)\b/.test(t)?1:/\b(un rato|harto|bastante)\b/.test(t)?3:def);
 
@@ -2350,7 +2353,7 @@ const CMD=(()=>{
     const est=$(idEst),btn=$(idBtn),base=etq();
     if(VOZ.corriendo){alto();return}                         // tocarla otra vez la detiene
     if(modoFijo)return decir(FIJO_FRASE+' Apaga el modo feria para hacer la rutina.');
-    if(!conectado())return decir('El robot no está conectado.');
+    if(!conectado())return decir(SIN_ROBOT);
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     const nivelAntes=(document.querySelector('#vel button.sel')||{dataset:{}}).dataset.v;
     VOZ.corriendo=true;VOZ.cancelar=false;btn.classList.add('corriendo');nivel(1);
@@ -2430,7 +2433,7 @@ const CMD=(()=>{
   // «Probar el asta / la inclinación»: ▲ un tramo, ▼ un tramo, ↕ 3 ciclos (para ver si se va corriendo hacia arriba)
   async function probarMec(cual,dir,btn){
     if(VOZ.corriendo){alto();return}
-    if(!conectado())return decir('El robot no está conectado.');
+    if(!conectado())return decir(SIN_ROBOT);
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     const asta=cual==='asta',incl=!asta,txt=btn.textContent;
     VOZ.corriendo=true;VOZ.cancelar=false;btn.classList.add('sel');
@@ -2448,7 +2451,7 @@ const CMD=(()=>{
   async function probar(giro){
     if(VOZ.corriendo){alto();return}
     if(modoFijo)return decir(FIJO_FRASE);
-    if(!conectado())return decir('El robot no está conectado.');
+    if(!conectado())return decir(SIN_ROBOT);
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     const nivelAntes=(document.querySelector('#vel button.sel')||{dataset:{}}).dataset.v;
     VOZ.corriendo=true;VOZ.cancelar=false;nivel(1);
@@ -2479,8 +2482,8 @@ const CMD=(()=>{
     const era=FERIA.n;
     if(era)await feriaParar(true);
     if(era===n&&n!==3)return;                          // el mismo botón: solo detener
-    if(n===3){sonar(7);const b=$('lbFeria3');if(b){b.classList.add('corriendo');setTimeout(()=>b.classList.remove('corriendo'),1200)}return}
-    if(!conectado())return decir('El robot no está conectado.');
+    if(n===3){if(!conectado())return decir(SIN_ROBOT);sonar(7);const b=$('lbFeria3');if(b){b.classList.add('corriendo');setTimeout(()=>b.classList.remove('corriendo'),1200)}return}
+    if(!conectado())return decir(SIN_ROBOT);
     if(paro)return decir('El paro está activo. Di «reanuda» primero.');
     if(VOZ.corriendo){alto();await dormir(400)}       // si corría una rutina, primero la detiene
     VOZ.cancelar=false;FERIA.n=n;feriaMarca();
@@ -2522,20 +2525,23 @@ const CMD=(()=>{
   // tocar PARO en la pantalla también cancela cualquier orden o rutina en curso
   $('paro').addEventListener('click',()=>{VOZ.cancelar=true;VOZ.hasta=0;VOZ.astaHasta=0;VOZ.inclHasta=0;feriaParar(false)},true);
 
+  // la misma orden de feria, audio o rutina oída por la tablet y por la laptop en menos de 4 s se hace UNA vez
+  // (sin esto, «rutina» dos veces la arrancaba y la paraba, y «activa el guardián» sonaba dos veces)
+  const yaHecho=k=>{const ahora=Date.now();if(VOZ.ult&&VOZ.ult.k===k&&ahora-VOZ.ult.t<4000)return true;VOZ.ult={k,t:ahora};return false};
   async function intentar(texto){
     const t=norm(texto);
     if(/\b(que puedo decir|que ordenes|ayuda|comandos)\b/.test(t)){
       decir('Puedes decir: adelante tres segundos, gira a la derecha noventa grados, más rápido, sube el asta, sigue la línea, enciende el shooter, pon el audio dos, o alto.');return true}
     if(/^(alto|para|parate|detente|deten|frena|cancela|stop)\b.*\brutina\b/.test(t)){alto();return true}   // «para la rutina» nunca la arranca
     // audios de la feria por voz (Ariel, 25 de nov. de 2026): suena el audio en el robot y los ojos se ponen felices
-    {const n=audioVoz(t);if(n){if(!conectado())decir('El robot no está conectado.');
+    {const n=audioVoz(t);if(n){if(yaHecho('a'+n))return true;if(!conectado())decir(SIN_ROBOT);
       else if(n===32){sonar(3);ojosFeliz();const id=VOZ.saludo=(VOZ.saludo||0)+1;   // «Hola, público presente» + «Soy ParaBot»
         setTimeout(()=>{if(VOZ.saludo===id&&!paro&&conectado())sonar(2)},SEG_SALUDO*1000)}
       else{sonar(n);ojosFeliz()}return true}}
     // botones de la FERIA por voz: «activa / presenta / inicia el módulo liebre | lanzador | guardián», «apaga el módulo…»
-    {const f=feriaVoz(t);if(f!==null){if(f===0){if(FERIA.n)await feriaParar(true);decir('Listo.')}else if(FERIA.n!==f)await feria(f);return true}}
-    if(/\b(rutina (2|dos)|segunda rutina|boton (2|dos)|regres\w* al inicio|vuelve al inicio)\b/.test(t)){rutina2();return true}
-    if(/\brutina\b/.test(t)){rutina();return true}
+    {const f=feriaVoz(t);if(f!==null){if(yaHecho('f'+f))return true;if(f===0){if(FERIA.n)await feriaParar(true);decir('Listo.')}else if(FERIA.n!==f)await feria(f);return true}}
+    if(/\b(rutina (2|dos)|segunda rutina|boton (2|dos)|regres\w* al inicio|vuelve al inicio)\b/.test(t)){if(!yaHecho('r2'))rutina2();return true}
+    if(/\brutina\b/.test(t)){if(!yaHecho('r1'))rutina();return true}
     if(modoFijo&&/\b(adelante|atras|avanza\w*|retrocede\w*|gira\w*|voltea\w*|dobla\w*|camina\w*|anda|muevete|mueve\w*|desplaza\w*|sigue la linea|vuelta)\b/.test(t)){decir(FIJO_FRASE);return true}
     const partes=partir(t),acciones=partes.map(interpretar);
     if(!acciones.length||acciones.some(a=>!a))return false;   // no es (solo) una orden: que responda la IA
@@ -2564,7 +2570,7 @@ const CMD=(()=>{
       acciones=acciones.filter(a=>!['mover','girar','rutina','linea'].includes(a.tipo));
       if(!acciones.length){decir(FIJO_FRASE);return}frase=(frase?frase+' ':'')+'Las ruedas están bloqueadas en esta demostración.'}
     const mueve=acciones.some(a=>['mover','girar','asta','rutina'].includes(a.tipo));
-    if(mueve&&!conectado()){decir('El robot no está conectado.');return}
+    if(mueve&&!conectado()){decir(SIN_ROBOT);return}
     if(mueve&&paro&&!acciones.some(a=>a.tipo==='reanudar')){decir('El paro está activo. Di «reanuda» primero.');return}
     if(VOZ.corriendo){decir('Termino la orden anterior primero. Di «alto» para cancelar.');return}
     VOZ.corriendo=true;VOZ.cancelar=false;
