@@ -2073,13 +2073,17 @@ const NV=(()=>{
   let tb=0;function burbuja(txt,fuente){const b=$('lbBurbuja');b.textContent=txt;const s=document.createElement('small');s.textContent=fuente;b.appendChild(s);
     b.classList.remove('oculto');clearTimeout(tb);tb=setTimeout(()=>b.classList.add('oculto'),12000)}
   // ---- "Oye ParaBot": escucha continua (solo si lo activas) ----
-  const WAKE=/(?:^|\b(?:oye|oiga|hey|ey|hola|o|ok|okay|que)\s*,?\s*)(para\s*bots?|parabots?|para\s*vot|para\s*vos|para\s*voz|para\s*bo|para\s*bol[dt]?|para\s*both|para\s*boot|parab[oó])\b|\b(?:oye|oiga|hey|ey|hola)\s*,?\s*robot\b/;
+  const WAKE=/(?:^|\b(?:oye|oiga|hey|ey|hola|o|ok|okay|que|hoy|oi|ay|hay)\s*,?\s*)(para\s*bots?|parabots?|para\s*vot|para\s*vos|para\s*voz|para\s*bo|para\s*bol[dt]?|para\s*both|para\s*boot|parab[oó]|paga\s*bot|pala\s*bot|para\s*b[aeiu]t|pagaban|paraban|parabola)\b|\b(?:oye|oiga|hey|ey|hola|hoy)\s*,?\s*robot\b/;
   function oyeIniciar(){
     if(!aSR||!st.oye||st.hablando||A.oyendo||st.srW)return;
     const r=st.srW=new aSR();r.lang='es-PE';r.interimResults=true;r.continuous=false;let txt='';
     r.onresult=e=>{txt='';for(let i=0;i<e.results.length;i++)txt+=e.results[i][0].transcript};
-    r.onerror=e=>{if(e.error==='not-allowed'){st.oye=false;pintar();$('lbEstado').textContent='Permite el micrófono para usar «Oye ParaBot».'}};
+    r.onerror=e=>{if(e.error==='not-allowed'){st.oye=false;pintar();$('lbEstado').textContent='Permite el micrófono para usar «Oye ParaBot».'}
+      else if(e.error==='network'){st.sinRed=Date.now();$('lbEstado').textContent='La tablet necesita internet para entender la voz. Mientras tanto, usa los botones.'}};
     r.onend=()=>{st.srW=null;const t=norm(txt.trim());
+      // si la laptop ya escucha «Oye ParaBot», la tablet no ejecuta lo mismo dos veces
+      let lap=false;try{lap=localStorage.getItem('lbOyeLaptop')!=='0'&&typeof CO!=='undefined'&&!!CO.vivos()[0]}catch(_){}
+      if(lap){setTimeout(oyeIniciar,250);return}
       if(t){const m=t.match(WAKE);
         if(m){const resto=txt.trim().slice(t.indexOf(m[0])+m[0].length).replace(/^[\s,.]+/,'');
           if(resto.trim()){st.despierto=0;$('lbMicFlot').classList.add('oye');aPreguntar(resto);return}
@@ -2090,6 +2094,8 @@ const NV=(()=>{
   }
   function oyePausar(){if(st.srW){const r=st.srW;st.srW=null;try{r.abort()}catch(_){}}}
   function oyeReanudar(){if(st.oye)setTimeout(oyeIniciar,400)}
+  // vigilante: si la escucha se detuvo (después de una orden que no habla, un error o sin internet), vuelve sola
+  setInterval(()=>{if(st.oye&&!st.srW&&!st.hablando&&!A.oyendo&&!speechSynthesis.speaking&&Date.now()-(st.sinRed||0)>5000)oyeIniciar()},2000);
   function pintar(){$('lbVoz').textContent='Narración '+(st.voz?'ON':'OFF');$('lbVoz').classList.toggle('off',!st.voz);
     $('lbOye').textContent='Oye ParaBot: '+(st.oye?'ON':'OFF');$('lbOye').classList.toggle('on',st.oye);$('lbOye').classList.toggle('off',!st.oye)}
   $('lbVoz').onclick=()=>{st.voz=!st.voz;try{localStorage.setItem('lbVoz',st.voz?'1':'0')}catch(_){}if(!st.voz)callar();pintar()};
@@ -2099,7 +2105,7 @@ const NV=(()=>{
   // «Escuchar con la tablet»: la propia tablet oye «Oye ParaBot» (respaldo si la laptop no está); se recuerda
   const pintaTab=()=>{const b=$('lbOyeTab');if(b){b.textContent='Escuchar con la tablet: '+(st.oye?'ON':'OFF');b.classList.toggle('sel',st.oye)}};
   if($('lbOyeTab'))$('lbOyeTab').onclick=()=>{$('lbOye').click();try{localStorage.setItem('lbOyeTablet',st.oye?'1':'0')}catch(_){}pintaTab()};
-  try{if(localStorage.getItem('lbOyeTablet')==='1'&&aSR){st.oye=true;pintar();setTimeout(oyeIniciar,1500)}}catch(_){}
+  try{const v=localStorage.getItem('lbOyeTablet');if(aSR&&(v==='1'||(v===null&&ES_ANDROID))){st.oye=true;pintar();setTimeout(oyeIniciar,1500)}}catch(_){}
   pintaTab();
   // saludo al primer toque (el navegador no deja hablar antes de tocar la pantalla)
   // sin saludo al tocar la pantalla: solo habla cuando se lo piden
@@ -2661,7 +2667,8 @@ $('lbGiro').onchange=()=>{try{localStorage.setItem('lbGiro',$('lbGiro').value)}c
   // chips de estado (IA / robot / Oye ParaBot) y "pensando…"
   setInterval(()=>{
     const ia=$('lbFuente').textContent||'',chip=(id,cls)=>{const c=$(id);c.classList.remove('on','med');if(cls)c.classList.add(cls)};
-    chip('iaChipIA',/Claude/.test(ia)?'on':'med');$('iaChipIA').lastChild.textContent=/Claude/.test(ia)?'IA Claude':'IA sin conexión (reglas)';
+    const lapViva=typeof CO!=='undefined'&&!!CO.vivos()[0];
+    chip('iaChipIA',lapViva?'on':'med');$('iaChipIA').lastChild.textContent=lapViva?'IA de la laptop':'Sin laptop: órdenes sí, IA no';
     const rob=!!tx&&Date.now()-ultimoRx<1500;chip('iaChipRobot',rob?(paro?'med':'on'):'');$('iaChipRobot').lastChild.textContent=!tx?'Robot desconectado':paro?'Robot en PARO':'Robot conectado';
 
     $('iaPensando').classList.toggle('oculto',!$('lbHablar').classList.contains('piensa'));
@@ -2736,7 +2743,8 @@ $('lbGiro').onchange=()=>{try{localStorage.setItem('lbGiro',$('lbGiro').value)}c
         hechos.add(e.grupo);$('lbEstado').textContent='Oye ParaBot → «'+e.texto+'»';aPreguntar(e.texto)}
     }catch(_){}
   },250);
-  const chipOye=()=>{const c=$('iaChipOye');c.classList.toggle('on',oyeLap&&!!(typeof CO!=='undefined'&&CO.vivos()[0]));};setInterval(chipOye,800);
+  const chipOye=()=>{const c=$('iaChipOye'),lap=oyeLap&&!!(typeof CO!=='undefined'&&CO.vivos()[0]),tab=!!NV._st.oye;
+    c.classList.toggle('on',lap||tab);c.lastChild.textContent=lap?'Oye ParaBot (laptop)':tab?'Oye ParaBot (tablet)':'Oye ParaBot apagado'};setInterval(chipOye,800);
   setInterval(()=>{const mov=typeof CMD!=='undefined'&&CMD.VOZ.corriendo;
     $('lbMicFlot').classList.toggle('detener',mov);$('lbHablar').classList.toggle('detener',mov);
     $('lbMicFlot').textContent=mov?'■':'🎤';if(mov)$('lbHablarTxt').textContent='Tocar para DETENER';
