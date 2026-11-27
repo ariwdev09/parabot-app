@@ -550,7 +550,8 @@ body[data-mod=asistente] #lbMicFlot{display:none}
     <div class="pvista"><svg id="pPaletaSvg" viewBox="0 0 200 300" role="img" aria-label="Paleta: dónde golpea"></svg>
     <div class="pzonas pzonas-v"><span id="pZ4">Alta<b>0</b></span><span id="pZ3">Media alta<b>0</b></span><span id="pZ2">Media baja<b>0</b></span><span id="pZ1">Baja<b>0</b></span></div></div>
     <div class="ajuste"><button class="btn" id="pUmMenos" title="Más sensible (todas las filas)">−</button><small id="pUm" style="text-align:center;flex:1">Umbral —</small><button class="btn" id="pUmMas" title="Hay que golpear más fuerte (todas las filas)">+</button></div>
-    <button class="mec" id="pReset" title="El contador vuelve a 0 y empieza otra sesión; lo anterior queda en Datos → Paleta">Nueva sesión (contador a 0)</button>
+    <div class="par"><button class="mec" id="pResumen" title="ParaBot dice cuántos puntos hizo, dónde golpeó y un consejo (funciona sin internet)">🔊 Resumen y consejo</button>
+    <button class="mec" id="pReset" title="El contador vuelve a 0 y empieza otra sesión; lo anterior queda en Datos → Paleta">Nueva persona (contador a 0)</button></div>
    </div>
   </div>
 
@@ -1752,6 +1753,9 @@ const PALDATOS=(()=>{
     if(pt[fuerte]>=55)recs.push(['Concentra los golpes en la '+NOM[fuerte],'El '+pt[fuerte]+' % de los aciertos van ahí. Varía la altura de los lanzamientos para practicar las otras filas.']);
     if(tot>=10&&pt[debil]<=10)recs.push(['La '+NOM[debil]+' casi no recibe golpes','Solo el '+pt[debil]+' %. Cambia la inclinación del lanzador para que la pelota llegue a esa altura.']);
     if(tr!=null)recs.push(tr>0.5?['Va mejorando','Suma unos '+fmt(tr,1)+' aciertos más por sesión.']:tr<-0.5?['Bajó un poco','Unos '+fmt(-tr,1)+' aciertos menos por sesión: revisa cansancio o la velocidad del shooter.']:['Estable','Mantiene la cantidad de aciertos entre sesiones.']);
+    {const centro=pt[1]+pt[2];if(tot>=5)recs.push(centro>=60?['Buen control','El '+centro+' % de los golpes van al centro de la paleta (zonas media alta y media baja), donde la pelota sale más controlada.']
+      :pt[3]>=pt[0]?['Golpea más con el centro','Solo el '+centro+' % va al centro; muchos golpes van a la punta. Espera un poco más la pelota antes de golpear.']
+      :['Golpea más con el centro','Solo el '+centro+' % va al centro; muchos golpes van cerca del mango. Adelanta el golpe o aléjate un poco de la pelota.'])}
     if(u.fuerza!=null&&u.fuerza<20)recs.push(['Golpes suaves','Fuerza promedio '+u.fuerza+' %. Si no cuenta golpes reales, baja el umbral de la paleta.']);
     return {ss,u,tot,zt,pu,pt,tr,debil,fuerte,recs}}
   const objFilas=a=>Object.fromEntries(NOM.map((n,i)=>[n.replace(/ /g,'_'),a[i]]));
@@ -1801,13 +1805,27 @@ const PALDATOS=(()=>{
     const el=document.createElement('a');el.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));el.download='paleta_aciertos.csv';el.click();setTimeout(()=>URL.revokeObjectURL(el.href),2000)};
   $('pdBorrar').onclick=()=>{if(PALETA.st.hist.length&&confirm('¿Borrar todos los golpes guardados de la paleta?')){PALETA.st.hist=[];PALETA.reiniciar();PALETA.guardarH();pintar()}};
   $('fCorredor').addEventListener('change',()=>{if(visible())pintar()});
-  return {pintar,analisis,resumenIA,siVisible:()=>{if(visible())pintar()}};
+  // ── resumen hablado de la sesión (para la feria: después de que alguien juega) ──
+  function resumenSesion(){
+    const a=analisis();if(!a||!a.u.total)return 'Todavía no hay puntos en esta sesión. ¡Agarra la raqueta y dale!';
+    const u=a.u,pu=a.pu,centro=pu[1]+pu[2],seg=Math.round(u.min*60),mx=pu.indexOf(Math.max(...pu));
+    let t=(u.total===1?'Hiciste un punto':'Hiciste '+u.total+' puntos')+(seg>=5?' en '+(seg<90?seg+' segundos':Math.round(u.min)+' minutos'):'')+'. ';
+    if(u.total>=2)t+='La mayoría fue en la '+NOM[mx]+'. ';
+    if(u.total<3)t+='Con pocos golpes todavía no puedo darte un consejo fino. ¡Sigue!';
+    else if(centro>=60)t+='Le pegas con el centro de la paleta: muy buen control.';
+    else if(pu[3]>=pu[0])t+='Consejo: espera un poquito más la pelota para golpear con el centro y no con la punta.';
+    else t+='Consejo: adelanta el golpe para no pegarle tan cerca del mango.';
+    if(u.fuerza!=null&&u.total>=3)t+=u.fuerza<20?' Y acompaña el golpe con el brazo: tus golpes fueron suaves.':u.fuerza>=70?' ¡Y qué fuerza!':'';
+    return t}
+  return {pintar,analisis,resumenIA,resumenSesion,siVisible:()=>{if(visible())pintar()}};
 })();
+$('pResumen').onclick=()=>{const t=PALDATOS.resumenSesion();try{NV.decir(t,'respuesta')}catch(_){};if(typeof estado==='function')estado(t)};
 
 // ---- Nivel 1: respuestas por reglas (sin internet), con los mismos datos ----
 const aDi=(x,n=1)=>fmt(x,n).replace(/,0+$/,'').replace(',',' coma ');   // 100,0 → «100»
 function aReglas(q){
   const d=aResumen(),t=q.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(/acierto|paleta|golpe|zona|punto|raqueta|como me fue con/.test(t)&&typeof PALDATOS!=='undefined'&&PALETA.st.total)return PALDATOS.resumenSesion();
   if(/acierto|paleta|golpe|zona/.test(t)&&typeof PALDATOS!=='undefined'){const p=PALDATOS.resumenIA();
     if(!p.sesiones)return 'Todavía no tengo golpes de la paleta. Conéctala en el Lanzador y golpea.';const u=p.ultima_sesion;
     return 'En la última sesión hiciste '+u.aciertos+' aciertos: '+Object.entries(u.por_fila).map(([k,v])=>v+' en la '+k.replace('_',' ')).join(', ')+'. Golpeas más en la '+p.fila_mas_usada+'.'}
@@ -2724,4 +2742,8 @@ $('lbGiro').onchange=()=>{try{localStorage.setItem('lbGiro',$('lbGiro').value)}c
     $('lbMicFlot').textContent=mov?'■':'🎤';if(mov)$('lbHablarTxt').textContent='Tocar para DETENER';
   },200);
 })();
-</script></body></html>
+</script><script>
+// sin internet en la feria: la app queda guardada en la tablet (red primero; si no hay red, la copia guardada)
+if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body></html>
